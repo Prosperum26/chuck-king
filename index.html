@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chuck King - AI Rage Game</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        <div id="ui-overlay">
+            <div id="ai-dialog" class="ai-dialog hidden">
+                <div id="ai-dialog-content" class="ai-dialog-content">
+                    <span id="ai-message"></span>
+                </div>
+            </div>
+            <div id="controls">
+                <button id="mute-ai-btn" class="control-btn">🔇 Mute AI</button>
+            </div>
+            <div id="stats">
+                <div>Deaths: <span id="death-count">0</span></div>
+                <div>Idle: <span id="idle-time">0.0s</span></div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
+
