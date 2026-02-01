@@ -189,6 +189,40 @@ Project này phục vụ như một study case để:
 4. Tạo fallback system khi AI không available
 5. Demo cách AI có thể tăng engagement (rage game mechanic)
 
+## 👥 Team Documentation
+
+> **Tài liệu hướng dẫn cho team 9 người làm việc cùng nhau**
+
+Project này được thiết kế để team 9 người có thể chia nhóm làm việc độc lập trên các phần khác nhau (Frontend, Backend, Game Engine, AI System).
+
+### 📚 Tài liệu đầy đủ
+
+Xem [docs/README.md](./docs/README.md) để có danh sách đầy đủ tất cả tài liệu.
+
+**Tài liệu chính:**
+- **[API Contract](./docs/API_CONTRACT.md)** - Interface giữa Frontend và Backend
+- **[Project Structure](./docs/PROJECT_STRUCTURE.md)** - Cấu trúc thư mục và trách nhiệm team
+- **[Git Workflow](./docs/GIT_WORKFLOW.md)** - Hướng dẫn sử dụng Git
+- **[Setup Guide](./docs/SETUP_GUIDE.md)** - Setup môi trường cho từng team
+- **[Testing Guide](./docs/TESTING_GUIDE.md)** - Hướng dẫn test code
+- **[Team Coordination](./docs/TEAM_COORDINATION.md)** - Cách phối hợp giữa các team
+
+### 🚀 Bắt đầu nhanh cho team
+
+1. **Đọc [Setup Guide](./docs/SETUP_GUIDE.md)** - Setup môi trường
+2. **Đọc [Project Structure](./docs/PROJECT_STRUCTURE.md)** - Hiểu cấu trúc project
+3. **Đọc [Git Workflow](./docs/GIT_WORKFLOW.md)** - Cách dùng Git
+4. **Đọc [Team Coordination](./docs/TEAM_COORDINATION.md)** - Cách phối hợp
+
+### 👥 Chia team (9 người)
+
+- **Frontend Team (3 người)**: UI/UX, Canvas, Integration
+- **Game Engine Team (2 người)**: Game Loop/Physics, Entities
+- **AI System Team (2 người)**: AI Integration, Event Tracking
+- **Backend Team (2 người)**: Server Setup, API Endpoints
+
+Chi tiết xem [Project Structure](./docs/PROJECT_STRUCTURE.md#team-responsibilities).
+
 ## 📄 License
 
 Free to use for study purposes.

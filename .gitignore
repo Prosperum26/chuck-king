@@ -1,5 +1,17 @@
 # API Config (chứa sensitive data)
 js/config.js
+js/config.local.js
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # OS files
 .DS_Store
@@ -14,3 +26,13 @@ Thumbs.db
 # Logs
 *.log
 
+# Build outputs
+dist/
+build/
+*.min.js
+*.min.css
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
