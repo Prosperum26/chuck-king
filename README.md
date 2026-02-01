@@ -10,14 +10,13 @@
 
 ## 🚀 Cách chạy
 
-1. Clone hoặc download project
-2. Mở file `index.html` trong trình duyệt web (Chrome, Firefox, Edge...)
-3. Không cần cài đặt gì thêm - game chạy hoàn toàn trên trình duyệt!
+Bạn có thể trải nghiệm trực tiếp qua link website ở phần Mô tả!
 
 ### Controls
 
 - **Space** hoặc **Arrow Up**: Giữ để charge jump, thả để nhảy
 - **Mute AI**: Nút ở góc dưới bên phải để tắt/bật AI
+  Khi bật AI: [mô tả]
 
 ## 🏗️ Kiến trúc Code
 
@@ -39,7 +38,7 @@ js/
     └── UIManager.js       # Quản lý UI overlay (dialog, stats)
 ```
 
-## 🤖 Hệ thống AI hoạt động thế nào?
+## Hệ thống AI hoạt động thế nào?
 
 ### Event Tracking
 
@@ -220,6 +219,8 @@ Xem [docs/README.md](./docs/README.md) để có danh sách đầy đủ tất c
 - **Game Engine Team (2 người)**: Game Loop/Physics, Entities
 - **AI System Team (2 người)**: AI Integration, Event Tracking
 - **Backend Team (2 người)**: Server Setup, API Endpoints
+[FE, BE, Tester, Designer, Scrum Master, Leader]
+
 
 Chi tiết xem [Project Structure](./docs/PROJECT_STRUCTURE.md#team-responsibilities).
 
