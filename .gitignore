@@ -1,6 +1,6 @@
 # API Config (chứa sensitive data)
-# js/config.js
-# js/config.local.js
+js/config.js
+js/config.local.js
 
 # Environment variables
 .env

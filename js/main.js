@@ -5,7 +5,7 @@ import { EventTracker } from './systems/EventTracker.js';
 import { AIRuleEngine } from './systems/AIRuleEngine.js';
 import { AIMessageGenerator } from './systems/AIMessageGenerator.js';
 import { UIManager } from './ui/UIManager.js';
-import { API_CONFIG } from './config.js';
+// import { API_CONFIG } from './config.js';
 
 // Initialize game
 const canvas = document.getElementById('game-canvas');
@@ -29,12 +29,12 @@ const eventTracker = new EventTracker();
 const aiMessageGenerator = new AIMessageGenerator();
 
 // Configure AI API (nếu có)
-if (API_CONFIG.endpoint) {
-    aiMessageGenerator.setAPIEndpoint(API_CONFIG.endpoint, API_CONFIG.apiKey, API_CONFIG.model);
-    console.log('✅ AI API configured:', API_CONFIG.endpoint);
-} else {
-    console.log('ℹ️ Using hardcoded AI messages (no API configured)');
-}
+// if (API_CONFIG.endpoint) {
+//     aiMessageGenerator.setAPIEndpoint(API_CONFIG.endpoint, API_CONFIG.apiKey, API_CONFIG.model);
+//     console.log('✅ AI API configured:', API_CONFIG.endpoint);
+// } else {
+//     console.log('ℹ️ Using hardcoded AI messages (no API configured)');
+// }
 
 const aiRuleEngine = new AIRuleEngine(aiMessageGenerator, eventTracker);
 const uiManager = new UIManager();
