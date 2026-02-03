@@ -9,13 +9,13 @@
 ### Cho người mới:
 
 1. **Đọc trước:**
-   - [Team Division](./TEAM_DIVISION.md) - Cách chia team 9 người
+   - [Team Division](./TEAM_DIVISION.md) - Cách chia 3 subteam & nhiệm vụ
    - [Setup Guide](./SETUP_GUIDE.md) - Setup môi trường
    - [Project Structure](./PROJECT_STRUCTURE.md) - Hiểu cấu trúc project
    - [Git Workflow](./GIT_WORKFLOW.md) - Cách dùng Git
 
 2. **Khi bắt đầu code:**
-   - [API Contract](./API_CONTRACT.md) - Interface giữa FE và BE
+   - [API Contract](./API_CONTRACT.md) - Interface giữa game (frontend) và API (AI/Firebase)
    - [Testing Guide](./TESTING_GUIDE.md) - Cách test code
 
 3. **Khi làm việc nhóm:**
@@ -33,7 +33,7 @@ Tóm tắt cách chia team 9 người, trách nhiệm từng người, và depen
 ---
 
 ### 1. [API Contract](./API_CONTRACT.md)
-Định nghĩa interface giữa Frontend và Backend.
+Định nghĩa interface giữa game (frontend) và các API ngoài (AI endpoint, Firebase API).
 
 **Nội dung:**
 - API endpoints
@@ -41,7 +41,7 @@ Tóm tắt cách chia team 9 người, trách nhiệm từng người, và depen
 - Error handling
 - Testing examples
 
-**Dành cho:** Backend Team (BE-1, BE-2), Frontend Integration (FE-3), AI Integration (AI-1)
+**Dành cho:** Subteam 3 (Backend & API), và bất kỳ ai gọi API (Subteam 1/2 khi cần)
 
 ---
 
@@ -76,10 +76,9 @@ Hướng dẫn setup môi trường cho từng team.
 
 **Nội dung:**
 - Prerequisites
-- Setup cho Frontend team
-- Setup cho Game Engine team
-- Setup cho AI System team
-- Setup cho Backend team
+- Setup cho Subteam 1 (Game Dev & AI-)
+- Setup cho Subteam 2 (UI/UX & Assets)
+- Setup cho Subteam 3 (Backend & API: Firebase/AI)
 - Common issues & solutions
 
 **Dành cho:** Tất cả team members (đọc phần của team mình)
@@ -116,56 +115,48 @@ Hướng dẫn phối hợp giữa các team.
 
 ## 👥 Team Quick Reference
 
-### Frontend Team (3 người)
+### Subteam 1 — Game Dev & AI- (Hưng, Bình, Tiến)
 
 **Files:**
-- `index.html`, `styles/main.css`, `js/ui/UIManager.js` (FE-1)
-- `index.html`, Canvas setup (FE-2)
-- `js/main.js`, Integration (FE-3)
+- `js/engine/GameEngine.js`
+- `js/entities/Player.js`, `js/entities/Platform.js`
+- `js/systems/EventTracker.js`, `js/systems/AIRuleEngine.js`
+- (shared) `js/main.js`
 
 **Docs cần đọc:**
-- [Setup Guide - Frontend](./SETUP_GUIDE.md#frontend-team)
-- [Testing Guide - Frontend](./TESTING_GUIDE.md#frontend-team)
-- [API Contract](./API_CONTRACT.md) (FE-3)
+- [Team Division](./TEAM_DIVISION.md#-subteam-1--game-dev--ai--core-gameplay--ai-logic--sfx)
+- [Project Structure](./PROJECT_STRUCTURE.md)
+- [Testing Guide](./TESTING_GUIDE.md)
 
 ---
 
-### Game Engine Team (2 người)
+### Subteam 2 — Frontend (UI/UX) & Assets (Quỳnh, Huyền, Minh)
 
 **Files:**
-- `js/engine/GameEngine.js`, `js/entities/Player.js` (GE-1)
-- `js/entities/Platform.js` (GE-2)
+- `index.html`
+- `styles/main.css`
+- `js/ui/UIManager.js`
+- (shared) `js/main.js`
 
 **Docs cần đọc:**
-- [Setup Guide - Game Engine](./SETUP_GUIDE.md#game-engine-team)
-- [Testing Guide - Game Engine](./TESTING_GUIDE.md#game-engine-team)
-- [Project Structure](./PROJECT_STRUCTURE.md#game-engine-team)
+- [Team Division](./TEAM_DIVISION.md#-subteam-2--frontend-uiux--game-assets)
+- [Project Structure](./PROJECT_STRUCTURE.md)
+- [Testing Guide](./TESTING_GUIDE.md)
 
 ---
 
-### AI System Team (2 người)
+### Subteam 3 — Backend & API (AI + Firebase) (Hưng, Thắng, Ân)
 
 **Files:**
-- `js/systems/AIMessageGenerator.js`, `js/config.js` (AI-1)
-- `js/systems/EventTracker.js`, `js/systems/AIRuleEngine.js` (AI-2)
+- `docs/API_CONTRACT.md`
+- `js/config.example.js`, `js/config.default.js`, `js/config.js` (KHÔNG commit)
+- (shared split) `js/systems/AIMessageGenerator.js` (phần gọi API)
 
 **Docs cần đọc:**
-- [Setup Guide - AI System](./SETUP_GUIDE.md#ai-system-team)
-- [Testing Guide - AI System](./TESTING_GUIDE.md#ai-system-team)
-- [API Contract](./API_CONTRACT.md) (AI-1)
-
----
-
-### Backend Team (2 người)
-
-**Files:**
-- `backend/server.js`, `backend/models/`, `backend/config/` (BE-1)
-- `backend/routes/ai.js`, `backend/controllers/` (BE-2)
-
-**Docs cần đọc:**
-- [Setup Guide - Backend](./SETUP_GUIDE.md#backend-team)
-- [Testing Guide - Backend](./TESTING_GUIDE.md#backend-team)
-- [API Contract](./API_CONTRACT.md) (quan trọng!)
+- [Team Division](./TEAM_DIVISION.md#-subteam-3--backend--api-ai--firebase-database)
+- [API Contract](./API_CONTRACT.md)
+- [Setup Guide](./SETUP_GUIDE.md)
+- [Testing Guide](./TESTING_GUIDE.md)
 
 ---
 
@@ -224,6 +215,10 @@ Hướng dẫn phối hợp giữa các team.
 - Testing guides for all teams
 - Team coordination guide
 
+### 2026-02-03
+- Reworked team structure into 3 subteams (Game Dev & AI-, UI/UX & Assets, Backend & API)
+- Updated docs references to remove `backend/` folder (static hosting + external APIs)
+
 ---
 
 ## 💬 Questions?
@@ -235,6 +230,6 @@ Nếu có câu hỏi:
 
 ---
 
-**Last Updated**: 2024-01-15
-**Maintained by**: All Teams
+**Last Updated**: 2026-02-03  
+**Maintained by**: All Subteams
 

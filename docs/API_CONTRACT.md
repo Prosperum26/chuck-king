@@ -1,25 +1,41 @@
 # 📋 API Contract - Chuck King
 
-> **Tài liệu này định nghĩa interface giữa Frontend và Backend.**
+> **Tài liệu này định nghĩa interface giữa game (frontend) và các API bên ngoài (AI endpoint, Firebase database API).**
 > 
 > ⚠️ **QUAN TRỌNG**: Mọi thay đổi API phải được cập nhật ở đây và thông báo cho team ngay lập tức!
 
 ---
 
-## 🔗 Base URL
+## 🔗 API endpoints được cấu hình như thế nào?
 
-```
-Development: http://localhost:3000
-Production: (sẽ cập nhật sau)
+Game hiện chạy dạng **static site** (host GitHub Pages). Vì vậy:
+
+- **Không được để API key bí mật (OpenAI key, service key, …) trong frontend**.
+- Nếu cần gọi AI “thật”, bắt buộc gọi thông qua **backend endpoint** (Firebase Cloud Functions/Cloud Run/…).
+
+### Client config (frontend)
+
+Frontend sẽ cấu hình endpoint trong `js/config.js` (file này **KHÔNG commit**):
+
+```js
+export const API_CONFIG = {
+  endpoint: "https://<YOUR-AI-ENDPOINT>", // full URL tới AI taunt endpoint
+  apiKey: null, // KHÔNG khuyến nghị dùng ở frontend (để null)
+  model: null
+};
 ```
 
 ---
 
 ## 📡 Endpoints
 
-### 1. POST `/api/ai/generate`
+### 1. POST `<AI_ENDPOINT>` (AI Taunt)
 
-**Mô tả**: Generate AI message dựa trên game events
+**Mô tả**: Generate AI taunt message dựa trên game events/context.
+
+**Ví dụ AI_ENDPOINT:**
+- Firebase HTTP Function: `https://<region>-<project>.cloudfunctions.net/api/ai/generate`
+- Cloud Run: `https://<service>-<hash>-<region>.a.run.app/api/ai/generate`
 
 **Request Headers:**
 ```json
@@ -31,7 +47,7 @@ Production: (sẽ cập nhật sau)
 **Request Body:**
 ```json
 {
-  "triggerType": "death" | "idle" | "stuck",
+  "triggerType": "death" | "idle" | "stuck" | "fall_high" | "death_streak",
   "context": {
     "deathCount": 5,
     "idleTime": 12.5,
@@ -40,7 +56,11 @@ Production: (sẽ cập nhật sau)
       "top": 1,
       "mid": 3,
       "bottom": 1
-    }
+    },
+    "deathStreak": 3,
+    "highestHeight": 420,
+    "currentHeight": 120,
+    "lastProgressAtMs": 1700000000000
   }
 }
 ```
@@ -50,7 +70,7 @@ Production: (sẽ cập nhật sau)
 {
   "status": "success",
   "message": "Câu trêu chọc từ AI",
-  "timestamp": "2024-01-15T10:30:00Z"
+  "timestamp": "2026-02-03T10:30:00Z"
 }
 ```
 
@@ -58,7 +78,7 @@ Production: (sẽ cập nhật sau)
 ```json
 {
   "status": "error",
-  "error": "Invalid triggerType. Must be 'death', 'idle', or 'stuck'",
+  "error": "Invalid triggerType",
   "code": "INVALID_TRIGGER"
 }
 ```
@@ -83,32 +103,34 @@ Production: (sẽ cập nhật sau)
 
 ---
 
-### 2. GET `/api/health`
+### 2. GET `/api/health` (Optional)
 
-**Mô tả**: Health check endpoint
+**Mô tả**: Health check endpoint (tuỳ backend triển khai có hay không).
 
 **Response (200):**
 ```json
 {
   "status": "ok",
-  "timestamp": "2024-01-15T10:30:00Z",
+  "timestamp": "2026-02-03T10:30:00Z",
   "version": "1.0.0"
 }
 ```
 
 ---
 
-### 3. POST `/api/game/stats` (Future - Optional)
+### 3. POST `/api/game/stats` (Optional - Firebase)
 
-**Mô tả**: Lưu game statistics (nếu cần)
+**Mô tả**: Lưu game statistics (dùng Firebase/DB).
 
 **Request Body:**
 ```json
 {
-  "playerId": "player-123",
+  "playerId": "player-123", 
+  "sessionId": "session-uuid",
   "deathCount": 10,
-  "playTime": 300,
-  "highestPlatform": 200
+  "playTimeSec": 300,
+  "bestHeight": 200,
+  "totalFallsFromBest": 2
 }
 ```
 
@@ -152,7 +174,7 @@ Tất cả error responses đều follow format:
 
 **Collection Example:**
 ```json
-POST http://localhost:3000/api/ai/generate
+POST <AI_ENDPOINT>
 Content-Type: application/json
 
 {
@@ -173,7 +195,7 @@ Content-Type: application/json
 ### Test với cURL
 
 ```bash
-curl -X POST http://localhost:3000/api/ai/generate \
+curl -X POST "<AI_ENDPOINT>" \
   -H "Content-Type: application/json" \
   -d '{
     "triggerType": "death",
@@ -195,6 +217,10 @@ curl -X POST http://localhost:3000/api/ai/generate \
 - `/api/ai/generate` endpoint
 - `/api/health` endpoint
 
+### Version 1.1.0 (2026-02-03)
+- Updated to static hosting model (GitHub Pages) + external API endpoints
+- Extended triggerType and context for upcoming rage metrics
+
 ---
 
 ## ⚠️ Breaking Changes
@@ -207,6 +233,6 @@ Nếu có breaking changes, phải:
 
 ---
 
-**Last Updated**: 2024-01-15
-**Maintained by**: Backend Team (BE-1, BE-2)
+**Last Updated**: 2026-02-03  
+**Maintained by**: Subteam 3 (Backend & API)
 

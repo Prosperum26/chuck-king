@@ -17,8 +17,8 @@
 
 **Ví dụ:**
 ```
-FE-1: Hôm qua làm mute button UI, hôm nay làm stats display, không có block
-BE-2: Hôm qua implement /api/ai/generate, hôm nay test với OpenAI API, cần API key từ AI-1
+Subteam 2: Hôm qua làm HUD (timer/height), hôm nay làm menu + settings, không có block
+Subteam 3: Hôm qua draft API contract cho AI endpoint, hôm nay POC Firebase Function, cần schema context từ Subteam 1
 ```
 
 ---
@@ -30,9 +30,9 @@ BE-2: Hôm qua implement /api/ai/generate, hôm nay test với OpenAI API, cần
 1. **API Changes:**
    ```
    ⚠️ BREAKING: Đã thay đổi API format
-   - Endpoint: POST /api/ai/generate
-   - Change: Thêm field "playerId" vào request
-   - Action: Frontend cần update API call
+   - Endpoint: POST <AI_ENDPOINT>
+   - Change: Thêm field "deathStreak" vào context
+   - Action: Subteam 1 update context emit, Subteam 3 update backend parse/prompt
    ```
 
 2. **Breaking Changes:**
@@ -52,100 +52,94 @@ BE-2: Hôm qua implement /api/ai/generate, hôm nay test với OpenAI API, cần
 
 4. **Blockers:**
    ```
-   🚫 BLOCKED: Cần API endpoint từ backend team
-   - Issue: Frontend không thể test API integration
-   - Need: Backend team cần implement /api/ai/generate trước
+   🚫 BLOCKED: Cần endpoint (Firebase Function) từ Subteam 3
+   - Issue: Không thể test AI API integration
+   - Need: Subteam 3 deploy hoặc bật emulator + cung cấp <AI_ENDPOINT>
    ```
 
 ---
 
 ## 🤝 Cross-Team Dependencies
 
-### Frontend ↔ Backend
+### Subteam 1 ↔ Subteam 2 (Gameplay ↔ UI/UX)
 
-**Frontend cần từ Backend:**
-- API endpoints theo contract
-- CORS configuration
-- Error response format
+**Subteam 2 cần từ Subteam 1:**
+- Game state/events để render HUD (death, timer, height, best height, death streak…)
+- Event cadence (tần suất emit) để tránh UI update quá dày
 
-**Backend cần từ Frontend:**
-- Request format validation
-- Test cases từ frontend
-- Performance requirements
+**Subteam 1 cần từ Subteam 2:**
+- UI flow (menu/settings) để expose gameplay toggles (shake on/off, mute…)
+- Assets/feedback spec (khi nào shake/flash/particle)
 
 **Communication:**
-- Sync API contract trước khi code
-- Test integration mỗi ngày
-- Thông báo ngay khi có thay đổi API
+- Chốt event names + payload trước khi code sâu
+- Test UI updates với gameplay events mỗi ngày
+- Thông báo ngay khi đổi UI ids/DOM structure (ảnh hưởng `UIManager`)
 
 ---
 
-### Game Engine ↔ AI System
+### Subteam 1 ↔ Subteam 3 (AI context ↔ API)
 
-**AI System cần từ Game Engine:**
-- Player death events
-- Player position (để tính zone)
-- Input events (để tính idle)
+**Subteam 3 cần từ Subteam 1:**
+- Context schema: deathCount, idleTime, deathStreak, highestHeight, fall-from-high, …
+- Trigger policy: khi nào gọi API vs khi nào dùng rule-based/hardcoded
 
-**Game Engine cần từ AI System:**
-- Event tracking không ảnh hưởng performance
-- AI system không block game loop
+**Subteam 1 cần từ Subteam 3:**
+- `<AI_ENDPOINT>` ổn định (deployed hoặc emulator)
+- Response/error format chuẩn để UI không bị crash
 
 **Communication:**
-- Define event interface trước
-- Test event flow cùng nhau
+- `API_CONTRACT.md` là single source of truth
+- Thông báo ngay khi có breaking change (context/triggerType)
 
 ---
 
-### Frontend ↔ Game Engine
+### Subteam 2 ↔ Subteam 3 (Settings/Stats ↔ Firebase API)
 
-**Frontend cần từ Game Engine:**
-- Game state để hiển thị UI
-- Events để trigger UI updates
+**Subteam 2 cần từ Subteam 3:**
+- API/SDK để load/save settings + stats (optional)
+- Quy ước “guest user” (anonymous) hay không cần login
 
-**Game Engine cần từ Frontend:**
-- Canvas setup
-- Input handling (có thể)
+**Subteam 3 cần từ Subteam 2:**
+- UX requirement: cần lưu gì, hiển thị gì (best height, total deaths…)
+- Tần suất ghi (để tránh spam writes)
 
 **Communication:**
-- Define interface giữa UI và game
-- Test UI updates với game events
+- Chốt data model + security rules trước khi code
+- Test trên GitHub Pages origin để check CORS
 
 ---
 
 ## 📋 Integration Points
 
-### 1. API Integration (FE-3 + BE-2 + AI-1)
+### 1. Gameplay → UI (Subteam 1 + Subteam 2)
 
 **Flow:**
 ```
-Game Event → EventTracker → AIRuleEngine → AIMessageGenerator → API Call → Backend → Response → UI
+Game loop/state → UIManager → HUD/Menu/Settings
 ```
 
 **Coordination:**
-- FE-3: Implement API call trong AIMessageGenerator
-- BE-2: Implement endpoint theo contract
-- AI-1: Test integration end-to-end
+- Subteam 1: expose state/events (death, time, height, streak…)
+- Subteam 2: render UI, animation, feedback (shake/flash/particles)
 
 **Checklist:**
-- [ ] API contract đã được định nghĩa
-- [ ] Backend endpoint đã implement
-- [ ] Frontend API call đã implement
-- [ ] Error handling đã test
-- [ ] Fallback system hoạt động
+- [ ] HUD hiển thị đúng state
+- [ ] UI không làm tụt FPS
+- [ ] Menu/settings không phá gameplay loop
 
 ---
 
-### 2. Event Flow (GE-1 + AI-2)
+### 2. Event Flow (Subteam 1 internal)
 
 **Flow:**
 ```
-Player Action → GameEngine → EventTracker → AIRuleEngine
+Player Action → GameEngine → EventTracker → AIRuleEngine → AIMessageGenerator → UI
 ```
 
 **Coordination:**
-- GE-1: Emit events khi player chết/idle
-- AI-2: Track events và build context
+- Subteam 1: đảm bảo tracking đúng + cooldown không spam
+- Subteam 2: UI nhận event `aiMessage` ổn định
 
 **Checklist:**
 - [ ] Event interface đã định nghĩa
@@ -155,22 +149,22 @@ Player Action → GameEngine → EventTracker → AIRuleEngine
 
 ---
 
-### 3. UI Updates (FE-1 + FE-3 + Game)
+### 3. AI API Integration (Subteam 1 + Subteam 3) — Giai đoạn sau
 
 **Flow:**
 ```
-Game State → UIManager → UI Elements
+Game Event → EventTracker → AIRuleEngine → AIMessageGenerator → (fetch) <AI_ENDPOINT> → Response → UI
 ```
 
 **Coordination:**
-- Game: Update game state
-- FE-3: Pass state to UIManager
-- FE-1: Render UI elements
+- Subteam 1: build context + call generator
+- Subteam 3: implement endpoint + prompt + rate limit + return message
 
 **Checklist:**
-- [ ] UI state được update đúng
-- [ ] UI không block game loop
-- [ ] UI responsive và không lag
+- [ ] `API_CONTRACT.md` đúng với backend
+- [ ] CORS OK (GitHub Pages origin)
+- [ ] Error handling + fallback OK
+- [ ] Không lộ secrets trong frontend
 
 ---
 
@@ -190,9 +184,9 @@ Game State → UIManager → UI Elements
    - Document decision
 
 3. **API Contract Conflict:**
-   - Backend team quyết định (single source of truth)
+   - Subteam 3 quyết định (single source of truth)
    - Update API_CONTRACT.md
-   - Frontend team update code
+   - Các subteam khác update code cùng lúc
 
 ---
 
@@ -305,6 +299,6 @@ Game State → UIManager → UI Elements
 
 ---
 
-**Last Updated**: 2024-01-15
-**Maintained by**: All Teams
+**Last Updated**: 2026-02-03  
+**Maintained by**: All Subteams
 

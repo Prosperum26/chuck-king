@@ -8,31 +8,25 @@
 
 ```
 chuck-king/
-├── index.html                 # Entry point (FE-3 quản lý)
+├── index.html                 # Entry point (Subteam 2 quản lý UI shell)
 ├── styles/
-│   └── main.css              # All styles (FE-1 quản lý)
+│   └── main.css              # All styles (Subteam 2)
 ├── js/
-│   ├── main.js               # Main entry, khởi tạo game (FE-3 quản lý)
-│   ├── config.js             # API config (AI-1 quản lý, KHÔNG commit)
+│   ├── main.js               # Main entry, khởi tạo game (Subteam 1/2/3 - shared integration point)
+│   ├── config.js             # Runtime config local (KHÔNG commit)
+│   ├── config.example.js     # Example config (commit)
+│   ├── config.default.js     # Safe defaults for GitHub Pages (commit)
 │   ├── engine/
-│   │   └── GameEngine.js     # Game loop, rendering (GE-1 quản lý)
+│   │   └── GameEngine.js     # Game loop, update/render, input (Subteam 1)
 │   ├── entities/
-│   │   ├── Player.js         # Player entity, physics (GE-1 quản lý)
-│   │   └── Platform.js       # Platform entity (GE-2 quản lý)
+│   │   ├── Player.js         # Player entity, physics (Subteam 1)
+│   │   └── Platform.js       # Platform entity, collision helper (Subteam 1)
 │   ├── systems/
-│   │   ├── EventTracker.js   # Track game events (AI-2 quản lý)
-│   │   ├── AIRuleEngine.js   # AI trigger rules (AI-2 quản lý)
-│   │   └── AIMessageGenerator.js  # AI message generation (AI-1 quản lý)
+│   │   ├── EventTracker.js   # Track player behavior & metrics (Subteam 1)
+│   │   ├── AIRuleEngine.js   # AI trigger rules (Subteam 1)
+│   │   └── AIMessageGenerator.js  # Taunt messages (rule-based + optional API) (Subteam 1 + Subteam 3 shared)
 │   └── ui/
-│       └── UIManager.js      # UI overlay, dialog (FE-1 quản lý)
-├── backend/                   # Backend server (BE-1, BE-2 quản lý)
-│   ├── server.js             # Express server setup (BE-1)
-│   ├── routes/
-│   │   └── ai.js             # AI endpoints (BE-2)
-│   ├── models/               # Database models (BE-1)
-│   ├── controllers/          # Business logic (BE-2)
-│   ├── middleware/           # Middleware functions (BE-1)
-│   └── config/               # Backend config (BE-1)
+│       └── UIManager.js      # UI overlay, HUD, dialog (Subteam 2)
 ├── docs/                      # Documentation
 │   ├── API_CONTRACT.md
 │   ├── PROJECT_STRUCTURE.md
@@ -46,172 +40,58 @@ chuck-king/
 
 ## 👥 Team Responsibilities
 
-### Frontend Team (3 người)
+> Áp dụng cho mô hình **3 subteam** (Game Dev & AI-, UI/UX & Assets, Backend & API).
 
-#### FE-1: UI/UX Manager
-**Files:**
-- `styles/main.css` - Tất cả CSS styles
-- `js/ui/UIManager.js` - UI logic, dialog management
+### Subteam 1 — Game Dev & AI- (Core gameplay + rule-based AI + SFX)
 
-**Responsibilities:**
-- Design và implement UI components
-- Responsive design
-- UI animations và transitions
-- Dialog box styling
+**Files own:**
+- `js/engine/GameEngine.js`
+- `js/entities/Player.js`
+- `js/entities/Platform.js`
+- `js/systems/EventTracker.js`
+- `js/systems/AIRuleEngine.js`
 
 **⚠️ Lưu ý:**
-- Không sửa logic game trong `GameEngine.js`
-- Chỉ làm việc với UI layer
+- Không làm phần API/LLM thật (gọi OpenAI/Claude/Firebase) trong giai đoạn “AI-”.
+- Khi cần thêm trigger/metric mới, phải update `EventTracker` + `AIRuleEngine` + thông báo Subteam 2 (UI) nếu có UI mới.
 
 ---
 
-#### FE-2: Game Canvas & Rendering
-**Files:**
-- `index.html` - HTML structure
-- Canvas setup và rendering helpers
+### Subteam 2 — Frontend (UI/UX) & Assets
 
-**Responsibilities:**
-- HTML structure
-- Canvas initialization
-- Responsive canvas sizing
-- Basic rendering utilities
+**Files own:**
+- `index.html`
+- `styles/main.css`
+- `js/ui/UIManager.js`
 
 **⚠️ Lưu ý:**
-- Không sửa game logic
-- Chỉ làm việc với HTML/CSS và canvas setup
+- UI/HUD không được block game loop (tránh DOM update quá dày).
+- Visual feedback (shake/flash/particle) nên đi theo event/state mà Subteam 1 cung cấp.
 
 ---
 
-#### FE-3: Frontend Integration
-**Files:**
-- `js/main.js` - Main entry point
-- Integration giữa các modules
-
-**Responsibilities:**
-- Khởi tạo game engine
-- Kết nối các modules với nhau
-- API calls từ frontend
-- Error handling cho API calls
+### Subteam 3 — Backend & API (AI + Firebase Database)
 
 **⚠️ Lưu ý:**
-- Phải hiểu flow của toàn bộ frontend
-- Phối hợp với BE team về API integration
+- Repo này là **static** (JS/HTML/CSS) để host dễ trên GitHub Pages.
+- “Backend” được triển khai dạng **dịch vụ ngoài** (Firebase/Cloud Functions/Cloud Run/…).
+- Subteam 3 chịu trách nhiệm **API contract + endpoint thật + Firebase schema/rules**, và cung cấp hướng dẫn/SDK JS tối giản để frontend gọi được.
 
 ---
 
-### Game Engine Team (2 người)
+## 🤝 Shared / Split ownership (quan trọng)
 
-#### GE-1: Game Loop & Physics
-**Files:**
-- `js/engine/GameEngine.js` - Game loop, update cycle
-- `js/entities/Player.js` - Player physics, movement
+Một số file là “điểm giao” giữa subteam:
 
-**Responsibilities:**
-- Game loop (update, render)
-- Player physics (jump, gravity, collision)
-- Input handling
-- Performance optimization
+- `js/main.js` (**shared**): wiring/init game, config load, glue code.
+  - Subteam 1: thêm hook/event cần cho gameplay.
+  - Subteam 2: đảm bảo UI elements/DOM ids đúng và không phá init flow.
+  - Subteam 3: đảm bảo config/API init không làm lộ secrets và có fallback.
 
-**⚠️ Lưu ý:**
-- Không sửa UI code
-- Không sửa AI system logic
-- Chỉ focus vào game mechanics
-
----
-
-#### GE-2: Entities & Platforms
-**Files:**
-- `js/entities/Platform.js` - Platform entities
-- Thêm entities mới (nếu có)
-
-**Responsibilities:**
-- Platform creation và management
-- Collision detection với platforms
-- Thêm obstacles, power-ups (future)
-- Level design helpers
-
-**⚠️ Lưu ý:**
-- Phối hợp với GE-1 về collision detection
-- Không sửa Player physics
-
----
-
-### AI System Team (2 người)
-
-#### AI-1: AI Integration & API
-**Files:**
-- `js/systems/AIMessageGenerator.js` - AI message generation
-- `js/config.js` - API configuration
-
-**Responsibilities:**
-- API calls đến backend
-- Parse API responses
-- Fallback về hardcoded messages
-- Error handling cho API calls
-
-**⚠️ Lưu ý:**
-- Phối hợp chặt với BE team về API format
-- Đảm bảo fallback luôn hoạt động
-- KHÔNG commit `config.js` có API key
-
----
-
-#### AI-2: Event Tracking & Rules
-**Files:**
-- `js/systems/EventTracker.js` - Track game events
-- `js/systems/AIRuleEngine.js` - AI trigger rules
-
-**Responsibilities:**
-- Track player events (death, idle, stuck)
-- Implement trigger rules
-- Context building cho AI
-- Cooldown management
-
-**⚠️ Lưu ý:**
-- Phối hợp với GE-1 để nhận events
-- Phối hợp với AI-1 để pass context
-
----
-
-### Backend Team (2 người)
-
-#### BE-1: API Server & Database
-**Files:**
-- `backend/server.js` - Express server setup
-- `backend/models/` - Database models
-- `backend/middleware/` - Middleware
-- `backend/config/` - Configuration
-
-**Responsibilities:**
-- Setup Express server
-- Database setup (nếu cần)
-- CORS configuration
-- Server deployment
-- Environment variables
-
-**⚠️ Lưu ý:**
-- Đảm bảo CORS cho phép frontend origin
-- Không hardcode sensitive data
-
----
-
-#### BE-2: API Endpoints & Integration
-**Files:**
-- `backend/routes/ai.js` - AI endpoints
-- `backend/controllers/` - Business logic
-
-**Responsibilities:**
-- Implement API endpoints theo contract
-- AI API integration (OpenAI, etc.)
-- Request/response validation
-- Error handling
-
-**⚠️ Lưu ý:**
-- Phải follow `API_CONTRACT.md` chính xác
-- Phối hợp với AI-1 về response format
-- Test với Postman trước khi merge
-
----
+- `js/systems/AIMessageGenerator.js` (**split ownership**):
+  - Subteam 1: hardcoded messages, mapping triggerType → message pool, tone levels.
+  - Subteam 3: `callAIAPI()`, parse response, auth headers, rate-limit/backoff (nếu có), và spec API trong `docs/API_CONTRACT.md`.
+  - Rule: không đổi schema request/response nếu chưa update `API_CONTRACT.md`.
 
 ## 🔒 File Ownership Rules
 
@@ -224,15 +104,16 @@ chuck-king/
 ### File Categories:
 
 **Own Files:**
-- Mỗi team member có files riêng (xem trên)
+- Mỗi subteam có file own (xem trên).
 
 **Shared Files:**
-- `js/main.js` - FE-3 + tất cả teams (integration point)
-- `index.html` - FE-2 + FE-3
+- `js/main.js` - integration point (Subteam 1/2/3)
+- `js/systems/AIMessageGenerator.js` - split ownership (Subteam 1 + 3)
 
 **Core Files (cần review):**
-- `js/engine/GameEngine.js` - Ảnh hưởng toàn bộ game
-- `js/main.js` - Entry point
+- `js/engine/GameEngine.js` - ảnh hưởng toàn bộ gameplay feel
+- `js/main.js` - entry point / integration
+- `js/systems/EventTracker.js` + `js/systems/AIRuleEngine.js` - ảnh hưởng AI triggers & telemetry
 
 ---
 
@@ -242,10 +123,9 @@ chuck-king/
 - Vanilla JavaScript (ES6 modules)
 - No external dependencies (hiện tại)
 
-### Backend
-- Node.js
-- Express.js
-- (Sẽ thêm khi implement)
+### External services (optional)
+- Firebase (Firestore/Realtime DB/Auth) cho lưu stats/settings/leaderboard
+- AI API (OpenAI/Claude/...) qua endpoint serverless để tránh lộ key
 
 ---
 
@@ -253,7 +133,6 @@ chuck-king/
 
 - `js/config.js` - Chứa API keys
 - `.env` - Environment variables
-- `node_modules/` - Dependencies
 - `*.log` - Log files
 
 Xem `.gitignore` để biết chi tiết.
@@ -275,6 +154,6 @@ Xem `.gitignore` để biết chi tiết.
 
 ---
 
-**Last Updated**: 2024-01-15
-**Maintained by**: All Teams
+**Last Updated**: 2026-02-03  
+**Maintained by**: All Subteams
 

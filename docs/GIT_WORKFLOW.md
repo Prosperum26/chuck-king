@@ -11,26 +11,20 @@
 ```
 main (production)
   └── develop (integration)
-      ├── feature/frontend-ui
-      ├── feature/frontend-canvas
-      ├── feature/frontend-integration
-      ├── feature/game-engine
-      ├── feature/game-entities
-      ├── feature/ai-integration
-      ├── feature/ai-tracking
-      ├── feature/backend-server
-      └── feature/backend-api
+      ├── feature/subteam1-...
+      ├── feature/subteam2-...
+      ├── feature/subteam3-...
 ```
 
 ### Branch Naming Convention
 
-**Format:** `feature/team-name-task`
+**Format:** `feature/<subteam>-<task>`
 
 **Examples:**
-- `feature/frontend-ui-mute-button`
-- `feature/game-engine-physics-fix`
-- `feature/backend-api-ai-endpoint`
-- `feature/ai-integration-error-handling`
+- `feature/subteam2-ui-hud-timer-height`
+- `feature/subteam1-physics-momentum-tuning`
+- `feature/subteam1-ai-triggers-death-streak`
+- `feature/subteam3-firebase-ai-endpoint`
 
 ---
 
@@ -59,7 +53,7 @@ git checkout -b feature/frontend-ui-stats-display
 git add .
 
 # Commit với message rõ ràng
-git commit -m "[FE-1] Add stats display component"
+git commit -m "[S2] Add HUD timer + height indicator"
 
 # Push lên remote
 git push origin feature/your-team-task
@@ -70,23 +64,17 @@ git push origin feature/your-team-task
 **Format:** `[TEAM] Description`
 
 **Team Codes:**
-- `[FE-1]` - Frontend UI/UX
-- `[FE-2]` - Frontend Canvas
-- `[FE-3]` - Frontend Integration
-- `[GE-1]` - Game Engine
-- `[GE-2]` - Game Entities
-- `[AI-1]` - AI Integration
-- `[AI-2]` - AI Tracking
-- `[BE-1]` - Backend Server
-- `[BE-2]` - Backend API
+- `[S1]` - Subteam 1 (Game Dev & AI-)
+- `[S2]` - Subteam 2 (UI/UX & Assets)
+- `[S3]` - Subteam 3 (Backend & API: AI/Firebase)
 
 **Examples:**
 ```
-[FE-1] Add mute button styling
-[GE-1] Fix player jump physics
-[AI-1] Add API error handling
-[BE-2] Implement /api/ai/generate endpoint
-[FE-3] Integrate AI API calls
+[S2] Add settings menu UI
+[S1] Tune jump momentum + collision precision
+[S1] Improve AI triggers (death streak + fall-from-high)
+[S3] Deploy Firebase Function for AI taunts
+[S3] Update API_CONTRACT schema v1.1
 ```
 
 ### 4. Merge vào develop
@@ -118,7 +106,7 @@ git merge feature/other-team-branch
 
 # Sau khi fix:
 git add .
-git commit -m "[TEAM] Resolve merge conflict"
+git commit -m "[S1/S2/S3] Resolve merge conflict"
 ```
 
 ---
@@ -334,6 +322,6 @@ git fetch origin             # Fetch without merge
 
 ---
 
-**Last Updated**: 2024-01-15
-**Maintained by**: All Teams
+**Last Updated**: 2026-02-03  
+**Maintained by**: All Subteams
 

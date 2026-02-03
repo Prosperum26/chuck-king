@@ -14,11 +14,11 @@
 
 ---
 
-## 👥 Testing cho từng team
+## 👥 Testing theo subteam (3 subteam)
 
-### Frontend Team
+### Subteam 2 — UI/UX & Assets
 
-#### FE-1: UI/UX Testing
+#### UI/UX Testing
 
 **Test Cases:**
 
@@ -58,7 +58,7 @@ document.getElementById('mute-ai-btn').click();
 
 ---
 
-#### FE-2: Canvas & Rendering Testing
+#### Canvas & Rendering Testing
 
 **Test Cases:**
 
@@ -94,7 +94,7 @@ checkFPS();
 
 ---
 
-#### FE-3: Integration Testing
+#### Integration Testing (shared: Subteam 1/2/3)
 
 **Test Cases:**
 
@@ -133,9 +133,9 @@ window.fetch = async (url, options) => {
 
 ---
 
-### Game Engine Team
+### Subteam 1 — Game Dev & AI-
 
-#### GE-1: Game Loop & Physics Testing
+#### Game Loop & Physics Testing
 
 **Test Cases:**
 
@@ -177,7 +177,7 @@ player.vy = -10;
 
 ---
 
-#### GE-2: Entities Testing
+#### Entities Testing
 
 **Test Cases:**
 
@@ -205,15 +205,15 @@ const platforms = [
 
 ---
 
-### AI System Team
+### AI Testing
 
-#### AI-1: AI Integration Testing
+#### (Subteam 3) AI API Integration Testing
 
 **Test Cases:**
 
-1. **API Calls:**
+1. **API Calls (server-side endpoint):**
    - [ ] API request format đúng
-   - [ ] API key được gửi đúng
+   - [ ] Auth headers (nếu có) đúng (KHÔNG để secret key trong frontend)
    - [ ] Response được parse đúng
    - [ ] Error handling hoạt động
 
@@ -246,7 +246,7 @@ const platforms = [
 
 ---
 
-#### AI-2: Event Tracking Testing
+#### (Subteam 1) Event Tracking & Rule-based AI Testing
 
 **Test Cases:**
 
@@ -281,30 +281,30 @@ console.log('Death zones:', eventTracker.deathZones);
 
 ---
 
-### Backend Team
+### Subteam 3 — Backend & API (Firebase/AI)
 
-#### BE-1: Server Testing
+#### API Service / Function Testing
 
 **Test Cases:**
 
-1. **Server Startup:**
-   - [ ] Server start không có errors
-   - [ ] Server listen đúng port
-   - [ ] Environment variables load đúng
+1. **Service Startup:**
+   - [ ] Service/function start không có errors
+   - [ ] Logs không lộ secrets
+   - [ ] Environment/secrets load đúng (server-side)
 
 2. **CORS:**
    - [ ] CORS cho phép frontend origin
    - [ ] Preflight requests hoạt động
 
-3. **Health Endpoint:**
-   - [ ] GET /api/health trả về 200
+3. **Health Endpoint (optional):**
+   - [ ] GET /api/health trả về 200 (nếu có)
    - [ ] Response format đúng
 
 **Test Commands:**
 
 ```bash
-# Test health endpoint
-curl http://localhost:3000/api/health
+# Test health endpoint (nếu có)
+curl "<API_BASE_URL>/api/health"
 
 # Expected response:
 # {"status":"ok","timestamp":"..."}
@@ -312,11 +312,11 @@ curl http://localhost:3000/api/health
 
 ---
 
-#### BE-2: API Endpoints Testing
+#### AI Endpoint Testing
 
 **Test Cases:**
 
-1. **POST /api/ai/generate:**
+1. **POST <AI_ENDPOINT>:**
    - [ ] Valid request → success response
    - [ ] Missing triggerType → 400 error
    - [ ] Missing context → 400 error
@@ -324,7 +324,7 @@ curl http://localhost:3000/api/health
    - [ ] API service down → 503 error
 
 2. **Request Validation:**
-   - [ ] Validate triggerType (death/idle/stuck)
+   - [ ] Validate triggerType (death/idle/stuck/...)
    - [ ] Validate context structure
    - [ ] Validate required fields
 
@@ -337,7 +337,7 @@ curl http://localhost:3000/api/health
 
 **Test 1: Valid Request**
 ```
-POST http://localhost:3000/api/ai/generate
+POST <AI_ENDPOINT>
 Content-Type: application/json
 
 {
@@ -353,7 +353,7 @@ Content-Type: application/json
 
 **Test 2: Missing triggerType**
 ```
-POST http://localhost:3000/api/ai/generate
+POST <AI_ENDPOINT>
 Content-Type: application/json
 
 {
@@ -364,7 +364,7 @@ Expected: 400 error
 
 **Test 3: Invalid triggerType**
 ```
-POST http://localhost:3000/api/ai/generate
+POST <AI_ENDPOINT>
 Content-Type: application/json
 
 {
@@ -378,28 +378,28 @@ Expected: 400 error
 
 ## 🔗 Integration Testing
 
-### FE + BE Integration
+### Frontend + API Integration (static site ↔ external endpoint)
 
 **Test Flow:**
 
 1. **Setup:**
    - Frontend chạy trên `http://localhost:5500`
-   - Backend chạy trên `http://localhost:3000`
+   - API chạy ở `<AI_ENDPOINT>` (deployed hoặc emulator)
 
 2. **Test Scenarios:**
 
    **Scenario 1: Happy Path**
    - [ ] Player chết → Event tracked
    - [ ] AI trigger → API call sent
-   - [ ] Backend response → Message hiển thị
+   - [ ] API response → Message hiển thị
 
    **Scenario 2: API Error**
-   - [ ] Backend return 500 error
+   - [ ] API return 500 error
    - [ ] Frontend fallback về hardcoded
    - [ ] Game vẫn chạy bình thường
 
    **Scenario 3: Network Error**
-   - [ ] Backend server down
+   - [ ] API down
    - [ ] Frontend handle error gracefully
    - [ ] Fallback hoạt động
 
@@ -410,7 +410,7 @@ Expected: 400 error
 
 ### Setup
 - [ ] Frontend running
-- [ ] Backend running
+- [ ] API reachable
 - [ ] CORS configured
 - [ ] API endpoint accessible
 
@@ -422,7 +422,7 @@ Expected: 400 error
 - [ ] API response → Message displayed
 
 ### Error Cases
-- [ ] Backend down → Fallback works
+- [ ] API down → Fallback works
 - [ ] Invalid API response → Fallback works
 - [ ] Network timeout → Fallback works
 ```
@@ -447,15 +447,15 @@ console.log('Debug:', variable);
 // DevTools → Performance → Record
 ```
 
-### Backend Debugging
+### API Debugging (Subteam 3)
 
 ```javascript
 // 1. Console logging
 console.log('Request:', req.body);
 console.log('Response:', response);
 
-// 2. VS Code debugger
-// F5 → Node.js debugger
+// 2. Cloud logs / emulator logs
+// Firebase Functions logs / Cloud Run logs
 
 // 3. Postman/Thunder Client
 // Test endpoints trực tiếp
@@ -473,24 +473,27 @@ console.log('Response:', response);
 - [ ] UI không bị vỡ
 - [ ] Test với mock API (nếu BE chưa sẵn sàng)
 
-**Backend:**
-- [ ] Server start không có errors
-- [ ] API endpoints test với Postman
-- [ ] Error handling đầy đủ
-- [ ] Response format đúng contract
+**Subteam 3 (API):**
+- [ ] Endpoint trả đúng schema theo `API_CONTRACT.md`
+- [ ] CORS OK với localhost + GitHub Pages
+- [ ] Error handling đầy đủ + fallback phía frontend hoạt động
 
-**Game Engine:**
+**Subteam 1 (Gameplay & AI-):**
 - [ ] Game chạy mượt (60 FPS)
 - [ ] Physics hoạt động đúng
 - [ ] Không có memory leaks
 
-**AI System:**
+**Subteam 2 (UI/UX):**
+- [ ] UI/HUD/menu/settings hoạt động đúng
+- [ ] AI dialog animation không che gameplay
+
+**AI (rule-based + optional API):**
 - [ ] Event tracking chính xác
-- [ ] AI triggers hoạt động
-- [ ] Fallback system test
+- [ ] Triggers hoạt động + cooldown không spam
+- [ ] Fallback system test (khi API fail)
 
 **Integration:**
-- [ ] Test FE + BE cùng nhau
+- [ ] Test frontend + API cùng nhau
 - [ ] Test toàn bộ flow
 - [ ] Không có breaking changes
 
@@ -520,6 +523,6 @@ console.log('Response:', response);
 
 ---
 
-**Last Updated**: 2024-01-15
-**Maintained by**: All Teams
+**Last Updated**: 2026-02-03  
+**Maintained by**: All Subteams
 

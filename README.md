@@ -192,14 +192,14 @@ Project này phục vụ như một study case để:
 
 > **Tài liệu hướng dẫn cho team 9 người làm việc cùng nhau**
 
-Project này được thiết kế để team 9 người có thể chia nhóm làm việc độc lập trên các phần khác nhau (Frontend, Backend, Game Engine, AI System).
+Project này được thiết kế để team 9 người có thể chia nhóm làm việc độc lập theo **3 subteam** (Gameplay & AI-, UI/UX & Assets, Backend & API).
 
 ### 📚 Tài liệu đầy đủ
 
 Xem [docs/README.md](./docs/README.md) để có danh sách đầy đủ tất cả tài liệu.
 
 **Tài liệu chính:**
-- **[API Contract](./docs/API_CONTRACT.md)** - Interface giữa Frontend và Backend
+- **[API Contract](./docs/API_CONTRACT.md)** - Interface giữa game (frontend) và API ngoài (AI/Firebase)
 - **[Project Structure](./docs/PROJECT_STRUCTURE.md)** - Cấu trúc thư mục và trách nhiệm team
 - **[Git Workflow](./docs/GIT_WORKFLOW.md)** - Hướng dẫn sử dụng Git
 - **[Setup Guide](./docs/SETUP_GUIDE.md)** - Setup môi trường cho từng team
@@ -215,11 +215,9 @@ Xem [docs/README.md](./docs/README.md) để có danh sách đầy đủ tất c
 
 ### 👥 Chia team (9 người)
 
-- **Frontend Team (3 người)**: UI/UX, Canvas, Integration
-- **Game Engine Team (2 người)**: Game Loop/Physics, Entities
-- **AI System Team (2 người)**: AI Integration, Event Tracking
-- **Backend Team (2 người)**: Server Setup, API Endpoints
-[FE, BE, Tester, Designer, Scrum Master, Leader]
+- **Subteam 1 — Game Dev & AI- (3 người)**: core gameplay, game loop & mechanics, AI triggers/logic (không gọi API), sound effects.
+- **Subteam 2 — UI/UX & Assets (3 người)**: UI/HUD/menu/settings, visual feedback, design & assets.
+- **Subteam 3 — Backend & API (3 người)**: thiết kế/triển khai API AI + Firebase database API, security rules, contract & integration docs.
 
 
 Chi tiết xem [Project Structure](./docs/PROJECT_STRUCTURE.md#team-responsibilities).
