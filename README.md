@@ -1,6 +1,11 @@
 # Chuck King - AI Rage Game MVP
-
+![Status](https://img.shields.io/badge/status-work_in_progress-orange)
 > Một web game platformer đơn giản với hệ thống AI trêu chọc người chơi, được thiết kế như một study case để tích hợp AI vào game.
+
+🚧 DỰ ÁN ĐANG TRONG QUÁ TRÌNH PHÁT TRIỂN 🚧  
+
+Repo này hiện vẫn đang được phát triển.  
+Tính năng, cấu trúc và nội dung có thể thay đổi.
 
 ## 🎮 Game là gì?
 
