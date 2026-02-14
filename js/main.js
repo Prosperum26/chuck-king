@@ -118,13 +118,12 @@ const gameAI = {
 // Expose globally cho debugging
 window.gameAI = gameAI;
 
-// ===== Load saved config nếu có =====
-// ❌ KHÔNG tải key từ storage - key chỉ giữ trong memory trong session
-// Luôn hiển thị modal để người dùng nhập lại
-modal.classList.remove('hidden');
+// ===== Load: không tự mở cửa sổ AI, chỉ mở khi bấm nút ⚙️ API =====
+// Modal ẩn mặc định (class "hidden" trong HTML). Vào trang là chơi luôn.
+startGame();
 
 /** Đang trong game hay chưa (để hiện footer Đóng/Lưu thay vì Bắt đầu/Bỏ qua) */
-let gameStarted = false;
+let gameStarted = true;
 
 // ===== Modal Event Handlers =====
 
