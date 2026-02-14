@@ -120,7 +120,15 @@ window.gameAI = gameAI;
 
 // ===== Load: không tự mở cửa sổ AI, chỉ mở khi bấm nút ⚙️ API =====
 // Modal ẩn mặc định (class "hidden" trong HTML). Vào trang là chơi luôn.
-startGame();
+// Gọi startGame khi DOM sẵn sàng + sau 1 frame (tránh màn hình đen khi Go Live).
+function initGameWhenReady() {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(startGame));
+    } else {
+        requestAnimationFrame(startGame);
+    }
+}
+initGameWhenReady();
 
 /** Đang trong game hay chưa (để hiện footer Đóng/Lưu thay vì Bắt đầu/Bỏ qua) */
 let gameStarted = true;
