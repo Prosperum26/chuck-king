@@ -12,8 +12,88 @@
 
 
 <body>
-    <div id="game-container">
+    <!-- API Key Input Modal (ẩn khi load, chỉ mở khi bấm nút ⚙️ API) -->
+    <div id="api-key-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Cấu Hình AI API (OpenAI)</h2>
+                <p style="font-size: 0.85em; margin-top: 5px; color: #666;">Tùy chọn - Để trống để chơi với hardcoded messages</p>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">
+                    🤖 <strong>OpenAI API</strong> sẽ sinh ra những lời trêu chọc AI ngẫu nhiên khi bạn chơi.
+                    <br><br>
+                    <strong>Chưa có API Key?</strong> 
+                    <a href="docs/GET_API_KEY.md" target="_blank" style="color: #0066cc; text-decoration: underline;">📖 Xem hướng dẫn lấy API Key</a>
+                </p>
+                
+                <!-- Endpoint Info -->
+                <div class="form-group">
+                    <label for="api-endpoint">
+                        🔗 OpenAI API Endpoint:
+                        <span title="Đây là URL để gọi API OpenAI ChatGPT" style="cursor: help; color: #0066cc;">ⓘ</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="api-endpoint" 
+                        class="form-input" 
+                        placeholder="https://api.openai.com/v1/chat/completions"
+                        value="https://api.openai.com/v1/chat/completions"
+                        readonly
+                        title="Endpoint mặc định cho OpenAI API">
+                    <small style="color: #666; margin-top: 3px; display: block;">
+                        💡 Mặc định - không cần thay đổi
+                    </small>
+                </div>
+                
+                <!-- API Key Info -->
+                <div class="form-group">
+                    <label for="api-key">
+                        🔑 API Key (sk-...):
+                        <span title="API key để authenticate với OpenAI - Bắt đầu bằng 'sk-'" style="cursor: help; color: #0066cc;">ⓘ</span>
+                    </label>
+                    <input 
+                        type="password" 
+                        id="api-key" 
+                        class="form-input" 
+                        placeholder="sk-... (lấy từ https://platform.openai.com/api-keys)"
+                        autocomplete="off">
+                    <small style="color: #666; margin-top: 3px; display: block;">
+                        ⚠️ Giữ bí mật - Không share với ai
+                    </small>
+                </div>
+                
+                <!-- Status Message -->
+                <div id="api-status" class="api-status hidden"></div>
+                
+                <!-- Test Button -->
+                <button id="test-api-btn" class="btn btn-secondary">🔍 Kiểm Tra API</button>
+            </div>
+            
+            <!-- Help Section -->
+            <div class="modal-help">
+                <strong>💡 Mẹo:</strong>
+                <ul style="margin: 8px 0 0 20px; padding: 0;">
+                    <li>Để trống (bỏ qua) → chơi với hardcoded messages</li>
+                    <li>OpenAI cấp <strong>$5 free credit</strong> cho người dùng mới</li>
+                    <li>Để lấy API key: <a href="https://platform.openai.com/api-keys" target="_blank" style="color: #0066cc;">Truy cập OpenAI Dashboard</a></li>
+                </ul>
+            </div>
+            
+            <div class="modal-footer">
+                <div class="modal-footer-start" id="modal-footer-start">
+                    <button id="skip-api-btn" class="btn btn-outline">📭 Bỏ Qua (Chơi không API)</button>
+                    <button id="start-game-btn" class="btn btn-primary">▶️ Bắt Đầu Game</button>
+                </div>
+                <div class="modal-footer-settings hidden" id="modal-footer-settings">
+                    <button id="close-api-btn" class="btn btn-outline">Đóng</button>
+                    <button id="save-api-btn" class="btn btn-primary">Lưu và áp dụng</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <div id="game-container" class="hidden">
         <canvas id="game-canvas"></canvas>
         <div id="ui-overlay">
             <div id="ai-dialog" class="ai-dialog hidden">
@@ -22,6 +102,7 @@
                 </div>
             </div>
             <div id="controls">
+                <button id="toggle-api-btn" class="control-btn" title="Bật/tắt cửa sổ cấu hình API">⚙️ API</button>
                 <button id="mute-ai-btn" class="control-btn">🔇 Mute AI</button>
             </div>
             <div id="stats">
