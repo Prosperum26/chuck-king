@@ -1,4 +1,4 @@
-# Chuck King - AI Rage Game MVP
+# Chuck King - AI Rage Game MVP --- testing
 
 > Một web game platformer đơn giản với hệ thống AI trêu chọc người chơi, được thiết kế như một study case để tích hợp AI vào game.
 
