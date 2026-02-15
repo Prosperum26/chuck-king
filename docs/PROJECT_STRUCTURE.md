@@ -8,7 +8,8 @@
 
 ```
 chuck-king/
-├── index.html                 # Entry point (Subteam 2 quản lý UI shell)
+├── index.html                 # Entry point - Start menu (GitHub Pages)
+├── game.html                  # Game page (canvas, API modal, main game)
 ├── styles/
 │   └── main.css              # All styles (Subteam 2)
 ├── js/
@@ -60,8 +61,9 @@ chuck-king/
 ### Subteam 2 — Frontend (UI/UX) & Assets
 
 **Files own:**
-- `index.html`
-- `styles/main.css`
+- `index.html` (start menu)
+- `game.html` (game UI shell)
+- `styles/main.css`, `styles/menu.css`
 - `js/ui/UIManager.js`
 
 **⚠️ Lưu ý:**

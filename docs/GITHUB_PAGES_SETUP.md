@@ -48,7 +48,7 @@
 
 ### Cache busting:
 
-- [x] Meta tags đã thêm vào `index.html`
+- [x] Meta tags đã thêm vào `game.html` (trang game)
 - [x] User có thể refresh cache bằng `Ctrl + Shift + R`
 
 ---
@@ -69,8 +69,8 @@
 
 **Giải pháp:**
 - Check file structure trong repository
-- Đảm bảo `index.html` ở root
-- Check paths trong `index.html`
+- Đảm bảo `index.html` (entry) và `game.html` (game) ở root
+- Check paths trong `index.html` và `game.html`
 
 ### Lỗi: CORS khi gọi API
 
@@ -122,7 +122,7 @@ Sau khi push code mới:
 ## 🎯 Best Practices
 
 1. **Test local trước khi push:**
-   - Mở `index.html` trong browser
+   - Mở `index.html` (menu) và `game.html` (game) trong browser
    - Check Console không có errors
    - Test tất cả features
 

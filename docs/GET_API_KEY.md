@@ -119,8 +119,8 @@
 
 ### 1. Lần đầu mở game:
 ```
-1. Mở index.html
-2. Modal hiển thị:
+1. Mở index.html (menu) → START → GET READY, hoặc mở trực tiếp game.html
+2. Trên game.html, modal hiển thị:
    - API Endpoint: https://api.openai.com/v1/chat/completions (✓ đã có)
    - API Key: [Nhập API key vào đây]
 3. Click "🔍 Kiểm Tra API" → Chờ

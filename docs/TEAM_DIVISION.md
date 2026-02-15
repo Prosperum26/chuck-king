@@ -143,8 +143,8 @@
   - Settings
 
 **Files chính:**
-- `index.html`
-- `styles/main.css`
+- `index.html` (start menu), `game.html` (game page)
+- `styles/main.css`, `styles/menu.css`
 - `js/ui/UIManager.js`
 
 **Nhiệm vụ cụ thể:**

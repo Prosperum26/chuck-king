@@ -2,10 +2,11 @@
 
 ## Cách 1: Chạy trực tiếp (Không cần API)
 
-1. **Mở file `index.html`** trong trình duyệt web (Chrome, Firefox, Edge...)
+1. **Mở file `index.html`** (trang menu) trong trình duyệt web (Chrome, Firefox, Edge...)
    - Có thể double-click vào file `index.html`
-   - Hoặc kéo thả file vào trình duyệt
-   - Game sẽ chạy với **hardcoded messages** (không cần API)
+   - Nhấn **START** → nhập tên → **GET READY** để vào game (mở `game.html`)
+   - Hoặc mở trực tiếp `game.html` để chơi ngay
+   - Game chạy với **hardcoded messages** nếu không cấu hình API
 
 2. **Chơi game:**
    - Giữ **Space** hoặc **Arrow Up** để charge jump
@@ -40,7 +41,7 @@ export const API_CONFIG = {
 
 ### Bước 3: Chạy game
 
-1. Mở file `index.html` trong trình duyệt
+1. Mở `game.html` (hoặc từ menu: index.html → START → GET READY) trong trình duyệt
 2. Mở **Developer Console** (F12) để xem log
 3. Nếu thấy `✅ AI API configured` = thành công!
 4. Chơi game và AI sẽ tự động generate messages
@@ -77,7 +78,7 @@ npx http-server
 ### Option C: VS Code Live Server
 
 1. Cài extension "Live Server" trong VS Code
-2. Right-click vào `index.html` → "Open with Live Server"
+2. Right-click vào `index.html` (menu) hoặc `game.html` (game) → "Open with Live Server"
 
 ## 🔍 Debug
 

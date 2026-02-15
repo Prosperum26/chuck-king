@@ -133,8 +133,8 @@ Hướng dẫn phối hợp giữa các team.
 ### Subteam 2 — Frontend (UI/UX) & Assets (Quỳnh, Huyền, Minh)
 
 **Files:**
-- `index.html`
-- `styles/main.css`
+- `index.html` (menu), `game.html` (game)
+- `styles/main.css`, `styles/menu.css`
 - `js/ui/UIManager.js`
 - (shared) `js/main.js`
 

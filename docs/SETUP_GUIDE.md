@@ -47,13 +47,13 @@ code .
 #### Chạy game:
 
 **Cách 1: Mở trực tiếp**
-- Double-click `index.html`
-- Hoặc kéo thả vào browser
+- Double-click `index.html` (trang menu) → START → GET READY để vào game
+- Hoặc mở trực tiếp `game.html` để chơi ngay
 
 **Cách 2: Live Server (khuyến nghị)**
 - Cài extension "Live Server" trong VS Code
 - Right-click `index.html` → "Open with Live Server"
-- Game sẽ chạy tại `http://localhost:5500`
+- Site sẽ load tại `http://localhost:5500` (menu); vào game qua START hoặc mở `game.html`
 
 #### Test với mock API:
 
@@ -108,7 +108,7 @@ code .
 #### Test game mechanics:
 
 1. **Test Player physics:**
-   - Mở `index.html` trong browser
+   - Mở `game.html` (hoặc index.html → START → GET READY) trong browser
    - Test jump, gravity, collision
    - Check console (F12) cho errors
 
@@ -129,7 +129,7 @@ code .
 
 #### Mục tiêu setup
 - Chạy game local bằng Live Server, đảm bảo UI không lag.
-- Làm việc chủ yếu ở `index.html`, `styles/main.css`, `js/ui/UIManager.js`.
+- Làm việc chủ yếu ở `index.html` (menu), `game.html` (game UI), `styles/main.css`, `styles/menu.css`, `js/ui/UIManager.js`.
 
 #### Tips nhanh
 - Nếu UI không update đúng: mở DevTools (F12) → Console để xem event `aiMessage` và state HUD.
