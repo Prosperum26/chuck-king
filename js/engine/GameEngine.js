@@ -1,6 +1,3 @@
-/**
- * GameEngine - Main game loop and rendering
- */
 export class GameEngine {
     constructor(canvas, ctx, player, platforms, eventTracker, aiRuleEngine, uiManager) {
         this.canvas = canvas;
@@ -10,131 +7,83 @@ export class GameEngine {
         this.eventTracker = eventTracker;
         this.aiRuleEngine = aiRuleEngine;
         this.uiManager = uiManager;
+        this.fixedDeltaTime = 1000 / 60; // Luôn tính vật lý ở 60 FPS
+        this.accumulator = 0;
+        this.lastTime = performance.now();
         
-        this.running = false;
-        this.lastTime = 0;
-        this.cameraY = 0;
-        
-        // Input handling
-        this.keys = {};
+        // Quản lý Input
+        this.input = {
+            keys: {}
+        };
+
         this.setupInput();
     }
-    
+
     setupInput() {
-        window.addEventListener('keydown', (e) => {
-            this.keys[e.key.toLowerCase()] = true;
-            this.eventTracker.onPlayerInput(); // Reset idle time
+        window.addEventListener("keydown", e => {
+            this.input.keys[e.code] = true;
+            if (e.code === "Space" || e.code.startsWith("Arrow")) e.preventDefault();
         });
-        
-        window.addEventListener('keyup', (e) => {
-            this.keys[e.key.toLowerCase()] = false;
-            this.eventTracker.onPlayerInput(); // Reset idle time
+
+        window.addEventListener("keyup", e => {
+            this.input.keys[e.code] = false;
+            // Xử lý nhảy khi thả phím Space (logic game mới)
+            if (e.code === "Space") {
+                this.player.jump();
+            }
         });
     }
-    
+
     start() {
-        this.running = true;
-        this.gameLoop(0);
+        this.then = performance.now();
+        this.loop();
     }
-    
-    stop() {
-        this.running = false;
-    }
-    
-    gameLoop(currentTime) {
-        if (!this.running) return;
-        
-        const deltaTime = currentTime - this.lastTime;
-        this.lastTime = currentTime;
-        
-        // Cap deltaTime to prevent large jumps
-        const dt = Math.min(deltaTime / 1000, 0.1);
-        
-        this.update(dt);
-        this.render();
-        
-        requestAnimationFrame((time) => this.gameLoop(time));
-    }
-    
-    update(dt) {
-        // Update event tracker first (to track idle time)
-        this.eventTracker.update(dt, this.player);
-        
-        // Update player
-        const jumpKey = this.keys[' '] || this.keys['arrowup'];
-        const leftKey = this.keys['a'] || this.keys['arrowleft'];
-        const rightKey = this.keys['d'] || this.keys['arrowright'];
-        this.player.update(dt, jumpKey, leftKey, rightKey, this.platforms);
-        
-        // Check death condition (fall below bottom)
-        if (this.player.y > this.canvas.height + 100) {
-            this.handlePlayerDeath();
+
+    loop() {
+        const now = performance.now();
+        let frameTime = now - this.lastTime;
+        this.lastTime = now;
+
+        // Tránh hiện tượng "Spiral of Death" khi tab bị lag
+        if (frameTime > 250) frameTime = 250; 
+
+        this.accumulator += frameTime;
+
+        // Cập nhật vật lý: Chạy đủ số lần cần thiết để đuổi kịp thời gian thực
+        while (this.accumulator >= this.fixedDeltaTime) {
+            this.update(); // Logic vật lý (60fps cố định)
+            this.accumulator -= this.fixedDeltaTime;
         }
-        
-        // Update AI rule engine (check triggers periodically)
-        this.aiRuleEngine.update(dt);
-        // Check triggers every frame (but cooldown prevents spam)
-        this.aiRuleEngine.checkTriggers();
-        
-        // Update UI
-        this.uiManager.update(dt);
-        this.uiManager.updateStats(
-            this.eventTracker.getDeathCount(),
-            this.eventTracker.getIdleTime()
-        );
+
+        // Vẽ: Chạy nhanh nhất có thể (165fps, 240fps...)
+        this.draw(); 
+
+        requestAnimationFrame(() => this.loop());
     }
-    
-    handlePlayerDeath() {
-        // Track death event
-        const deathZone = this.getZoneId(this.player.x, this.player.y);
-        this.eventTracker.onDeath(deathZone);
-        
-        // Respawn player
-        this.player.respawn(200, 300);
-        
-        // Check AI triggers
-        this.aiRuleEngine.checkTriggers();
+
+    update() {
+        // Update các sàn di chuyển
+        this.platforms.forEach(platform => platform.update(this.player));
+
+        // Update người chơi
+        this.player.update(this.input, this.platforms, 1920, 1080);
+
+        // Update AI (để hiển thị thông báo nếu có)
+        this.aiRuleEngine.update(); 
     }
-    
-    getZoneId(x, y) {
-        // Simple zone detection based on Y position
-        if (y < 250) return 'top';
-        if (y < 400) return 'mid';
-        return 'bottom';
-    }
-    
-    render() {
-        // Clear canvas
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Draw background gradient
-        const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-        gradient.addColorStop(0, '#87CEEB');
-        gradient.addColorStop(0.5, '#98D8E8');
-        gradient.addColorStop(1, '#B0E0E6');
-        this.ctx.fillStyle = gradient;
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Draw platforms
-        this.platforms.forEach(platform => platform.render(this.ctx));
-        
-        // Draw player
-        this.player.render(this.ctx);
-        
-        // Draw charge indicator
-        if (this.player.isCharging) {
-            const chargePercent = this.player.chargePower / this.player.maxCharge;
-            const barWidth = 100;
-            const barHeight = 10;
-            const barX = this.player.x - barWidth / 2;
-            const barY = this.player.y - 30;
-            
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            this.ctx.fillRect(barX, barY, barWidth, barHeight);
-            
-            this.ctx.fillStyle = chargePercent > 0.8 ? '#ff0000' : '#00ff00';
-            this.ctx.fillRect(barX, barY, barWidth * chargePercent, barHeight);
-        }
+
+    draw() {
+        // Xóa màn hình
+        this.ctx.clearRect(0, 0, 1920, 1080);
+
+        // Vẽ nền (tùy chọn)
+        // this.ctx.fillStyle = "#222";
+        // this.ctx.fillRect(0, 0, 1920, 1080);
+
+        // Vẽ sàn
+        this.platforms.forEach(platform => platform.draw(this.ctx));
+
+        // Vẽ người chơi
+        this.player.draw(this.ctx);
     }
 }
-

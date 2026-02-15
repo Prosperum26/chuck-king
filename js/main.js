@@ -8,7 +8,7 @@ import { APIKeyManager } from './systems/APIKeyManager.js';
 import { AICallLogic } from './systems/AICallLogic.js';
 import { UIManager } from './ui/UIManager.js';
 
-// ===== Initialize Modal Elements =====
+// ===== Initialize Modal Elements (AI/FE) =====
 const modal = document.getElementById('api-key-modal');
 const gameContainer = document.getElementById('game-container');
 const endpointInput = document.getElementById('api-endpoint');
@@ -23,61 +23,68 @@ const saveApiBtn = document.getElementById('save-api-btn');
 const modalFooterStart = document.getElementById('modal-footer-start');
 const modalFooterSettings = document.getElementById('modal-footer-settings');
 
-// ===== Initialize Systems =====
-const apiKeyManager = new APIKeyManager();
+// ===== Setup Canvas (Dev_Game) =====
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
+const GAME_WIDTH = 1920;
+const GAME_HEIGHT = 1080;
 
-// Set canvas size
-canvas.width = 400;
-canvas.height = 600;
+function setupCanvas() {
+    canvas.width = GAME_WIDTH;
+    canvas.height = GAME_HEIGHT;
+}
+setupCanvas();
 
-// Create game entities
-const platforms = [
-  new Platform(50, 500, 300, 20),
-  new Platform(100, 350, 200, 20),
-  new Platform(150, 200, 150, 20),
-];
+window.addEventListener('resize', () => {
+    console.log("Cửa sổ thay đổi, nhưng độ phân giải game vẫn là 1920x1080");
+});
 
-const player = new Player(200, 550);
-
-// Create systems
+// ===== Initialize Systems =====
+const apiKeyManager = new APIKeyManager();
 const eventTracker = new EventTracker();
 const aiMessageGenerator = new AIMessageGenerator();
 const aiRuleEngine = new AIRuleEngine(aiMessageGenerator, eventTracker);
 const uiManager = new UIManager();
 
-// Create game engine (but not started yet)
+// ===== Platforms (Dev_Game map: moving, broken, bouncy, ice, oneWay, fake) =====
+const platforms = [
+    new Platform(-2000, 1000, 6000, 200, "normal"),
+    new Platform(150, 800, 160, 40, "normal"),
+    new Platform(800, 800, 140, 30, "normal"),
+    new Platform(500, 640, 140, 30, "broken"),
+    new Platform(1150, 620, 120, 30, "normal"),
+    new Platform(500, 400, 120, 30, "moving", 300, 2),
+    new Platform(1100, 280, 120, 40, "bouncy"),
+    new Platform(500, 160, 140, 100, "fake"),
+    new Platform(800, 520, 180, 50, "fake"),
+    new Platform(1400, 740, 140, 30, "broken"),
+    new Platform(1450, 440, 130, 30, "ice"),
+    new Platform(1580, 440, 140, 30, "fake"),
+    new Platform(1670, 240, 140, 30, "broken"),
+    new Platform(1350, 180, 100, 30, "fake"),
+    new Platform(1420, 180, 80, 30, "normal"),
+    new Platform(1100, 80, 220, 40, "oneWay"),
+];
+
+const player = new Player(50, canvas.height - 150, eventTracker);
 const gameEngine = new GameEngine(canvas, ctx, player, platforms, eventTracker, aiRuleEngine, uiManager);
 
-// ===== AI Call Logic Helper =====
-// Expose AICallLogic methods globally để game code có thể gọi
+// ===== AI Call Logic Helper (AI team) =====
 const gameAI = {
-    // Lưu trữ current API credentials (chỉ trong memory)
     apiKey: null,
     endpoint: null,
     model: 'gpt-3.5-turbo',
 
-    /**
-     * Set API credentials (nhận từ modal input)
-     */
     setCredentials(apiKey, endpoint, model = 'gpt-3.5-turbo') {
         this.apiKey = apiKey?.trim() || null;
         this.endpoint = endpoint?.trim() || null;
         this.model = model;
-        // ❌ KHÔNG lưu key vào storage
     },
 
-    /**
-     * Kiểm tra xem có API credentials hợp lệ không
-     */    
     hasValidCredentials() {
         return this.apiKey && this.endpoint;
     },
 
-    /**
-     * Generate story từ AI
-     */
     async generateStory() {
         if (!this.hasValidCredentials()) {
             return { success: false, message: 'Chưa cấu hình API' };
@@ -85,9 +92,6 @@ const gameAI = {
         return await AICallLogic.generateStory(this.apiKey, this.endpoint, this.model);
     },
 
-    /**
-     * Generate rage message từ AI
-     */
     async generateRage(stage, deathCount = 0) {
         if (!this.hasValidCredentials()) {
             return { success: false, message: 'Chưa cấu hình API' };
@@ -95,9 +99,6 @@ const gameAI = {
         return await AICallLogic.generateRage(this.apiKey, this.endpoint, stage, deathCount, this.model);
     },
 
-    /**
-     * Test API credentials
-     */
     async testAPI() {
         if (!this.apiKey || !this.endpoint) {
             return { success: false, message: 'Vui lòng nhập cả Endpoint và API Key' };
@@ -105,22 +106,14 @@ const gameAI = {
         return await AICallLogic.testAPI(this.apiKey, this.endpoint, this.model);
     },
 
-    /**
-     * Clear credentials
-     */
     clearCredentials() {
         this.apiKey = null;
         this.endpoint = null;
-        // ❌ KHÔNG xoá storage
     }
 };
-
-// Expose globally cho debugging
 window.gameAI = gameAI;
 
-// ===== Load: không tự mở cửa sổ AI, chỉ mở khi bấm nút ⚙️ API =====
-// Modal ẩn mặc định (class "hidden" trong HTML). Vào trang là chơi luôn.
-// Gọi startGame khi DOM sẵn sàng + sau 1 frame (tránh màn hình đen khi Go Live).
+// ===== Load: start game when ready (modal ẩn, vào trang chơi luôn) =====
 function initGameWhenReady() {
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(startGame));
@@ -130,104 +123,64 @@ function initGameWhenReady() {
 }
 initGameWhenReady();
 
-/** Đang trong game hay chưa (để hiện footer Đóng/Lưu thay vì Bắt đầu/Bỏ qua) */
 let gameStarted = true;
 
 // ===== Modal Event Handlers =====
-
-/**
- * Test API key
- */
 testApiBtn.addEventListener('click', async () => {
     const endpoint = endpointInput.value.trim();
     const apiKey = apiKeyInput.value.trim();
-    
     if (!endpoint || !apiKey) {
         showStatus('❌ Vui lòng nhập cả Endpoint và API Key', 'error');
         return;
     }
-    
-    // Validate endpoint format
     if (!endpoint.includes('https://')) {
         showStatus('❌ Endpoint phải start với https://', 'error');
         return;
     }
-    
     showStatus('⏳ Đang kiểm tra API...', 'loading');
     testApiBtn.disabled = true;
-    
-    // Set credentials vào gameAI
     gameAI.setCredentials(apiKey, endpoint);
-    
-    // Test API
     const result = await gameAI.testAPI();
-    
     testApiBtn.disabled = false;
-    
     if (result.success) {
         showStatus('✅ API Key hợp lệ!', 'success');
-        setTimeout(() => {
-            startGame();
-        }, 1500);
+        setTimeout(() => startGame(), 1500);
     } else {
         showStatus(`❌ ${result.message}`, 'error');
     }
 });
 
-/**
- * Start game - với hoặc không có API
- */
 startGameBtn.addEventListener('click', async () => {
     const endpoint = endpointInput.value.trim();
     const apiKey = apiKeyInput.value.trim();
-    
     if (endpoint && apiKey) {
-        // Nếu có nhập thì test trước
         showStatus('⏳ Đang kiểm tra API...', 'loading');
         startGameBtn.disabled = true;
-        
-        // Set credentials vào gameAI
         gameAI.setCredentials(apiKey, endpoint);
-        
-        // Test API
         const result = await gameAI.testAPI();
-        
         startGameBtn.disabled = false;
-        
         if (result.success) {
             showStatus('✅ API Key hợp lệ!', 'success');
-            setTimeout(() => {
-                startGame();
-            }, 1000);
+            setTimeout(() => startGame(), 1000);
         } else {
             showStatus(`❌ ${result.message}`, 'error');
         }
     } else {
-        // Không có API config, chơi bình thường với hardcoded messages
         gameAI.clearCredentials();
         startGame();
     }
 });
 
-/**
- * Skip API configuration
- */
 skipApiBtn.addEventListener('click', () => {
     gameAI.clearCredentials();
     startGame();
 });
 
-/**
- * Hiển thị status message
- */
 function showStatus(message, type) {
     apiStatus.textContent = message;
     apiStatus.className = `api-status ${type}`;
 }
 
-/**
- * Start game
- */
 function startGame() {
     gameStarted = true;
     modal.classList.add('hidden');
@@ -245,9 +198,6 @@ function startGame() {
     gameEngine.start();
 }
 
-/**
- * Bật/tắt cửa sổ cấu hình API
- */
 function toggleApiModal() {
     const isHidden = modal.classList.toggle('hidden');
     if (!isHidden) {
@@ -262,10 +212,7 @@ function toggleApiModal() {
 }
 
 toggleApiBtn.addEventListener('click', () => toggleApiModal());
-
-closeApiBtn.addEventListener('click', () => {
-    modal.classList.add('hidden');
-});
+closeApiBtn.addEventListener('click', () => modal.classList.add('hidden'));
 
 saveApiBtn.addEventListener('click', async () => {
     const endpoint = endpointInput.value.trim();
@@ -289,18 +236,14 @@ saveApiBtn.addEventListener('click', async () => {
 });
 
 // ===== Game Event Handlers =====
-
-// Handle mute button
 document.getElementById("mute-ai-btn").addEventListener("click", () => {
-  aiRuleEngine.toggleMute();
-  const btn = document.getElementById("mute-ai-btn");
-  if (aiRuleEngine.isMuted()) {
-    btn.textContent = "🔊 Unmute AI";
-    btn.classList.add("muted");
-  } else {
-    btn.textContent = "🔇 Mute AI";
-    btn.classList.remove("muted");
-  }
+    aiRuleEngine.toggleMute();
+    const btn = document.getElementById("mute-ai-btn");
+    if (aiRuleEngine.isMuted()) {
+        btn.textContent = "🔊 Unmute AI";
+        btn.classList.add("muted");
+    } else {
+        btn.textContent = "🔇 Mute AI";
+        btn.classList.remove("muted");
+    }
 });
-
-

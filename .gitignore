@@ -17,11 +17,13 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# Editor files
+# Editor / IDE files
 .vscode/
 .idea/
+.vs/
 *.swp
 *.swo
+*~
 
 # Logs
 *.log
@@ -29,6 +31,7 @@ Thumbs.db
 # Build outputs
 dist/
 build/
+out/
 *.min.js
 *.min.css
 
@@ -36,3 +39,8 @@ build/
 *.tmp
 *.temp
 .cache/
+.parcel-cache/
+
+# Test / coverage
+coverage/
+.nyc_output/
