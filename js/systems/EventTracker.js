@@ -29,6 +29,18 @@ export class EventTracker {
         this.lastInputTime = Date.now();
         this.idleTime = 0;
     }
+
+    /**
+     * Generic track for Dev_Game Player: 'death' -> onDeath(zone), 'jump' -> onPlayerInput()
+     */
+    track(eventType, data) {
+        if (eventType === 'death') {
+            this.onDeath(data?.zone ?? 'bottom');
+        }
+        if (eventType === 'jump' || eventType === 'bounce') {
+            this.onPlayerInput();
+        }
+    }
     
     onDeath(zoneId) {
         this.deathCount++;

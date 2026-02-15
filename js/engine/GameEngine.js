@@ -23,11 +23,12 @@ export class GameEngine {
         window.addEventListener("keydown", e => {
             this.input.keys[e.code] = true;
             if (e.code === "Space" || e.code.startsWith("Arrow")) e.preventDefault();
+            this.eventTracker.onPlayerInput();
         });
 
         window.addEventListener("keyup", e => {
             this.input.keys[e.code] = false;
-            // Xử lý nhảy khi thả phím Space (logic game mới)
+            this.eventTracker.onPlayerInput();
             if (e.code === "Space") {
                 this.player.jump();
             }
@@ -44,20 +45,24 @@ export class GameEngine {
         let frameTime = now - this.lastTime;
         this.lastTime = now;
 
-        // Tránh hiện tượng "Spiral of Death" khi tab bị lag
-        if (frameTime > 250) frameTime = 250; 
+        if (frameTime > 250) frameTime = 250;
 
         this.accumulator += frameTime;
 
-        // Cập nhật vật lý: Chạy đủ số lần cần thiết để đuổi kịp thời gian thực
         while (this.accumulator >= this.fixedDeltaTime) {
-            this.update(); // Logic vật lý (60fps cố định)
+            this.update();
             this.accumulator -= this.fixedDeltaTime;
         }
 
-        // Vẽ: Chạy nhanh nhất có thể (165fps, 240fps...)
-        this.draw(); 
+        // AI & UI: once per frame with real time (eventTracker idle, aiRuleEngine cooldown, stats)
+        const dtSec = frameTime / 1000;
+        this.eventTracker.update(dtSec, this.player);
+        this.aiRuleEngine.update(dtSec);
+        this.aiRuleEngine.checkTriggers();
+        this.uiManager.update(dtSec);
+        this.uiManager.updateStats(this.eventTracker.getDeathCount(), this.eventTracker.getIdleTime());
 
+        this.draw();
         requestAnimationFrame(() => this.loop());
     }
 
