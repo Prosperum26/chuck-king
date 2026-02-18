@@ -77,9 +77,12 @@ export class Platform {
         }
     }
 
-    draw(ctx) {
+    draw(ctx, camera) {
         // Nếu bục đã vỡ (isBroken = true) thì không vẽ gì cả
         if (this.isBroken) return; 
+
+        // Get screen position from world position
+        const screenPos = camera.worldToScreen(this.x, this.y);
 
         // Chọn màu sắc
         switch (this.type) {
@@ -102,10 +105,10 @@ export class Platform {
         }
 
         // Vẽ hình khối
-        ctx.fillRect(this.x, this.y, this.w, this.h);
+        ctx.fillRect(screenPos.screenX, screenPos.screenY, this.w, this.h);
         
         // Vẽ viền
         ctx.strokeStyle = "rgba(255,255,255,0.5)";
-        ctx.strokeRect(this.x, this.y, this.w, this.h);
+        ctx.strokeRect(screenPos.screenX, screenPos.screenY, this.w, this.h);
     }
 }

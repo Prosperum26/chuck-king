@@ -220,25 +220,28 @@ export class Player {
         );
     }
 
-    draw(ctx) {
+    draw(ctx, camera) {
+        // Get screen position from world position
+        const screenPos = camera.worldToScreen(this.x, this.y);
+
         // Vẽ nhân vật
         ctx.fillStyle = "#ff4444";
-        ctx.fillRect(this.x, this.y, this.w, this.h);
+        ctx.fillRect(screenPos.screenX, screenPos.screenY, this.w, this.h);
 
         // Vẽ mắt
         ctx.fillStyle = "white";
-        let eyeX = this.facingRight ? this.x + 38 : this.x + 4;
-        ctx.fillRect(eyeX, this.y + 5, 8, 8);
+        let eyeX = this.facingRight ? screenPos.screenX + 38 : screenPos.screenX + 4;
+        ctx.fillRect(eyeX, screenPos.screenY + 5, 8, 8);
 
         // Vẽ thanh lực nhảy
         if (this.charge > 0) {
             ctx.fillStyle = "lime";
             ctx.beginPath();
-            ctx.arc(this.x + 15, this.y - 15, 5, 0, Math.PI * 2);
+            ctx.arc(screenPos.screenX + 15, screenPos.screenY - 15, 5, 0, Math.PI * 2);
             ctx.fill();
             
             ctx.fillStyle = "yellow";
-            ctx.fillRect(this.x - 5, this.y - 10, (this.charge / PHYSICS.maxJumpForce) * 40, 5);
+            ctx.fillRect(screenPos.screenX - 5, screenPos.screenY - 10, (this.charge / PHYSICS.maxJumpForce) * 40, 5);
         }
     }
 }
