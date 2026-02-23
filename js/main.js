@@ -7,6 +7,7 @@ import { AIMessageGenerator } from './systems/AIMessageGenerator.js';
 import { APIKeyManager } from './systems/APIKeyManager.js';
 import { AICallLogic } from './systems/AICallLogic.js';
 import { UIManager } from './ui/UIManager.js';
+import { NPCDialogSystem } from './systems/NPCDialogSystem.js';
 
 // ===== Initialize Modal Elements (AI/FE) =====
 const modal = document.getElementById('api-key-modal');
@@ -45,6 +46,7 @@ const eventTracker = new EventTracker();
 const aiMessageGenerator = new AIMessageGenerator();
 const aiRuleEngine = new AIRuleEngine(aiMessageGenerator, eventTracker);
 const uiManager = new UIManager();
+const npcDialogSystem = new NPCDialogSystem(aiMessageGenerator);
 
 // ===== Platforms (Dev_Game map: moving, broken, bouncy, ice, oneWay, fake) =====
 const platforms = [
@@ -67,7 +69,7 @@ const platforms = [
 ];
 
 const player = new Player(50, canvas.height - 150, eventTracker);
-const gameEngine = new GameEngine(canvas, ctx, player, platforms, eventTracker, aiRuleEngine, uiManager);
+const gameEngine = new GameEngine(canvas, ctx, player, platforms, eventTracker, aiRuleEngine, uiManager, npcDialogSystem);
 
 // ===== AI Call Logic Helper (AI team) =====
 const gameAI = {
@@ -196,6 +198,11 @@ function startGame() {
     }
 
     gameEngine.start();
+
+    // NPC dialog: intro (API hoặc default)
+    setTimeout(() => {
+        npcDialogSystem.showDialog('intro');
+    }, 600);
 }
 
 function toggleApiModal() {
@@ -246,4 +253,19 @@ document.getElementById("mute-ai-btn").addEventListener("click", () => {
         btn.textContent = "🔇 Mute AI";
         btn.classList.remove("muted");
     }
+});
+// ===== NPC Dialog Trigger Helpers =====
+window.triggerNPCDialog = function(dialogKey) {
+    if (npcDialogSystem) npcDialogSystem.showDialog(dialogKey);
+};
+window.changeStage = function(stageName) {
+    if (npcDialogSystem) npcDialogSystem.onStageChange(stageName);
+};
+
+// Demo: nút test dialog (intro, stage1-4, ending)
+document.querySelectorAll('.demo-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-dialog');
+        if (key && npcDialogSystem) npcDialogSystem.showDialog(key);
+    });
 });

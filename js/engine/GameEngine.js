@@ -1,5 +1,5 @@
 export class GameEngine {
-    constructor(canvas, ctx, player, platforms, eventTracker, aiRuleEngine, uiManager) {
+    constructor(canvas, ctx, player, platforms, eventTracker, aiRuleEngine, uiManager, npcDialogSystem = null) {
         this.canvas = canvas;
         this.ctx = ctx;
         this.player = player;
@@ -7,6 +7,7 @@ export class GameEngine {
         this.eventTracker = eventTracker;
         this.aiRuleEngine = aiRuleEngine;
         this.uiManager = uiManager;
+        this.npcDialogSystem = npcDialogSystem;
         this.fixedDeltaTime = 1000 / 60; // Luôn tính vật lý ở 60 FPS
         this.accumulator = 0;
         this.lastTime = performance.now();
@@ -61,6 +62,15 @@ export class GameEngine {
         this.aiRuleEngine.checkTriggers();
         this.uiManager.update(dtSec);
         this.uiManager.updateStats(this.eventTracker.getDeathCount(), this.eventTracker.getIdleTime());
+        
+        // Update NPC Dialog System (chỉ timer auto-close; trêu chọc do AIRuleEngine → npcTaunt)
+        if (this.npcDialogSystem) {
+            this.npcDialogSystem.update(dtSec, {
+                deathCount: this.eventTracker.getDeathCount(),
+                idleTime: this.eventTracker.getIdleTime(),
+                score: 0
+            });
+        }
 
         this.draw();
         requestAnimationFrame(() => this.loop());

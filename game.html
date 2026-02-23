@@ -96,14 +96,34 @@
     <div id="game-container" class="hidden">
         <canvas id="game-canvas"></canvas>
         <div id="ui-overlay">
-            <div id="ai-dialog" class="ai-dialog hidden">
-                <div id="ai-dialog-content" class="ai-dialog-content">
-                    <span id="ai-message"></span>
+            <!-- NPC Dialog Box (dialog + trêu chọc AI dùng chung) -->
+            <div id="npc-dialog-box" class="npc-dialog-box hidden">
+                <div class="npc-dialog-header">
+                    <span id="npc-name" class="npc-name">NPC</span>
+                    <button id="npc-dialog-close-btn" class="npc-dialog-close-btn" title="Đóng">×</button>
+                </div>
+                <div class="npc-dialog-body">
+                    <div id="npc-dialog-text" class="npc-dialog-text">
+                        Xin chào!
+                    </div>
+                </div>
+                <div class="npc-dialog-footer">
+                    <!-- Next button ẩn - chỉ auto-close theo timer -->
                 </div>
             </div>
+            
             <div id="controls">
                 <button id="toggle-api-btn" class="control-btn" title="Bật/tắt cửa sổ cấu hình API">⚙️ API</button>
                 <button id="mute-ai-btn" class="control-btn">🔇 Mute AI</button>
+            </div>
+            <div id="demo-dialogs" class="demo-dialogs">
+                <span class="demo-label">Demo:</span>
+                <button type="button" class="demo-btn" data-dialog="intro">Intro</button>
+                <button type="button" class="demo-btn" data-dialog="stage1">Stage 1</button>
+                <button type="button" class="demo-btn" data-dialog="stage2">Stage 2</button>
+                <button type="button" class="demo-btn" data-dialog="stage3">Stage 3</button>
+                <button type="button" class="demo-btn" data-dialog="stage4">Stage 4</button>
+                <button type="button" class="demo-btn" data-dialog="ending">Ending</button>
             </div>
             <div id="stats">
                 <div>Deaths: <span id="death-count">0</span></div>
