@@ -3,96 +3,23 @@
  * Trêu chọc: death/idle/stuck (API hoặc default)
  * Dialog: intro, stage1-4, ending (API hoặc default, output chia thành nhiều dòng)
  */
-import { AICallLogic } from './AICallLogic.js';
+import {
+    DEFAULT_TAUNT_MESSAGES,
+    TAUNT_NPC_NAME,
+    TAUNT_PROMPT_BASE,
+    TAUNT_TRIGGER_DESCRIPTIONS,
+    DEFAULT_DIALOGS,
+    DIALOG_PROMPTS,
+} from '../config/NPCDialogConfig.js';
 
 /** Dialog type keys */
 export const DIALOG_TYPES = ['intro', 'stage1', 'stage2', 'stage3', 'stage4', 'ending'];
 
 export class AIMessageGenerator {
     constructor() {
-        // Hardcoded taunt messages (trêu chọc)
-        this.hardcodedMessages = {
-            death: [
-                "Lại chết rồi à?",
-                "Giỏi quá nhỉ!",
-                "Lần thứ mấy rồi?",
-                "Cố gắng lên nào!",
-                "Dễ vậy mà không làm được?",
-                "Thật là tệ...",
-                "Lại rơi xuống à?",
-                "Chán quá đi!",
-            ],
-            idle: [
-                "Đang làm gì đấy?",
-                "Ngủ rồi à?",
-                "Chơi hay không chơi?",
-                "Bỏ cuộc rồi à?",
-                "Còn sống không?",
-                "Động đậy đi chứ!",
-            ],
-            stuck: [
-                "Kẹt ở đây rồi à?",
-                "Lại chết ở chỗ này nữa?",
-                "Học hỏi đi chứ!",
-                "Làm sao mà chết hoài vậy?",
-                "Thử cách khác đi!",
-                "Ngu quá!",
-            ]
-        };
+        this.hardcodedMessages = DEFAULT_TAUNT_MESSAGES;
+        this.defaultDialogs = DEFAULT_DIALOGS;
 
-        // Default NPC dialog (intro, 4 stage, ending) - dùng khi không có API
-        this.defaultDialogs = {
-            intro: {
-                npcName: '👾 Game Master',
-                dialogs: [
-                    "Chào mừng tới Chuck King!",
-                    "Công việc của bạn là thoát khỏi mê cung 8-bit này!",
-                    "Xuyên qua các sàn, thẻ, và vượt qua những thách thức...",
-                    "Bạn sẵn sàng chưa? Hãy bắt đầu!"
-                ]
-            },
-            stage1: {
-                npcName: '😊 NPC Hỗ Trợ',
-                dialogs: [
-                    "Tốt lắm! Bạn bắt đầu rất tốt!",
-                    "Tiếp tục nhảy, tránh từng cái bẫy...",
-                    "Mỗi bước là gần tới chiến thắng hơn!"
-                ]
-            },
-            stage2: {
-                npcName: '🤔 AI Thách Thức',
-                dialogs: [
-                    "Ồ, nó trở nên khó khăn rồi!",
-                    "Các sàn đang di chuyển... Bạn có theo kịp không?",
-                    "Tôi đoán bạn sẽ phải cố gắng hơn..."
-                ]
-            },
-            stage3: {
-                npcName: '😈 Ma Quỷ Thách Thức',
-                dialogs: [
-                    "Bây giờ đã vào cấp độ khó đấy!",
-                    "Các sàn băng, sàn giả, mọi thứ sẽ rơi...",
-                    "Hehe... bạn sẽ rơi bao nhiêu lần nhỉ?"
-                ]
-            },
-            stage4: {
-                npcName: '👑 Boss Cuối Cùng',
-                dialogs: [
-                    "CUỐI CÙNG... chúng ta gặp nhau!",
-                    "Đây là sàn khó nhất của tất cả!",
-                    "Nếu bạn vượt qua được cái này, bạn sẽ là CHUCK KING!"
-                ]
-            },
-            ending: {
-                npcName: '🎉 Bình Luận Viên',
-                dialogs: [
-                    "TUYỆT VỜI! Bạn đã làm được!",
-                    "Bạn chính thức là CHUCK KING rồi!",
-                    "Hãy chơi lại để chinh phục các cấp độ khác!"
-                ]
-            }
-        };
-        
         this.currentMessage = null;
         this.apiEndpoint = null;
         this.apiKey = null;
@@ -227,20 +154,21 @@ export class AIMessageGenerator {
     }
     
     /**
-     * Build prompt for AI based on trigger type
+     * Build prompt for AI based on trigger type (dùng config: TAUNT_PROMPT_BASE + TAUNT_TRIGGER_DESCRIPTIONS)
      */
     buildPrompt(triggerType, context) {
-        const deathCountInZone = context.deathZones[context.lastDeathZone] || 0;
-        
-        const triggerDesc = {
-            death: `Người chơi vừa chết lần thứ ${context.deathCount}.`,
-            idle: `Người chơi đã không làm gì trong ${Math.floor(context.idleTime)} giây.`,
-            stuck: `Người chơi đã chết ${deathCountInZone} lần ở khu vực "${context.lastDeathZone}" và vẫn không thể vượt qua.`
+        const deathCountInZone = context.deathZones?.[context.lastDeathZone] || 0;
+        const vars = {
+            deathCount: context.deathCount,
+            idleTime: Math.floor(context.idleTime),
+            deathsInZone: deathCountInZone,
+            lastDeathZone: context.lastDeathZone || 'bottom',
         };
-        
-        const basePrompt = `Bạn là một NPC mỉa mai vô cùng cay đắng và tệ bạo trong game platformer. ${triggerDesc[triggerType]} Hãy nói một câu ngắn (tối đa 15-20 từ) để trêu chọc và châm biếm người chơi một cách cơ cấu, đanh thép và vô duyên. Không giải thích, chỉ trả về câu nói ngắn gọn.`;
-        
-        return basePrompt;
+        let triggerDesc = TAUNT_TRIGGER_DESCRIPTIONS[triggerType] || TAUNT_TRIGGER_DESCRIPTIONS.death;
+        for (const [key, value] of Object.entries(vars)) {
+            triggerDesc = triggerDesc.replace(new RegExp(`{{${key}}}`, 'g'), String(value));
+        }
+        return TAUNT_PROMPT_BASE.replace('{{triggerDesc}}', triggerDesc);
     }
     
     /**
@@ -248,7 +176,7 @@ export class AIMessageGenerator {
      */
     dispatchMessage(message) {
         const event = new CustomEvent('npcTaunt', {
-            detail: { message, npcName: '😏 AI' }
+            detail: { message, npcName: TAUNT_NPC_NAME }
         });
         window.dispatchEvent(event);
     }
@@ -336,18 +264,10 @@ export class AIMessageGenerator {
     }
 
     /**
-     * Tạo prompt cho từng loại dialog (intro, stage1-4, ending)
+     * Tạo prompt cho từng loại dialog (intro, stage1-4, ending) từ config DIALOG_PROMPTS
      */
     buildDialogPrompt(dialogType) {
-        const prompts = {
-            intro: `Bạn là Game Master của game platformer Chuck King. Viết 3-4 câu ngắn chào mừng và hướng dẫn người chơi (tiếng Việt). Mỗi câu trên một dòng, không đánh số, không markdown.`,
-            stage1: `Bạn là NPC hỗ trợ trong game platformer. Người chơi vừa vào stage 1 (dễ). Viết 2-3 câu khích lệ ngắn (tiếng Việt). Mỗi câu một dòng.`,
-            stage2: `Bạn là NPC thách thức trong game platformer. Người chơi đang ở stage 2 (trung bình). Viết 2-3 câu thách thức ngắn (tiếng Việt). Mỗi câu một dòng.`,
-            stage3: `Bạn là NPC ma quỷ trong game platformer. Người chơi đang ở stage 3 (khó). Viết 2-3 câu đe dọa/khó (tiếng Việt). Mỗi câu một dòng.`,
-            stage4: `Bạn là Boss cuối cùng trong game platformer. Người chơi đang ở stage 4 (boss). Viết 2-3 câu hùng hồn (tiếng Việt). Mỗi câu một dòng.`,
-            ending: `Bạn là bình luận viên game. Người chơi vừa chiến thắng Chuck King. Viết 2-3 câu chúc mừng (tiếng Việt). Mỗi câu một dòng.`
-        };
-        return prompts[dialogType] || prompts.intro;
+        return DIALOG_PROMPTS[dialogType] || DIALOG_PROMPTS.intro;
     }
     
     /**

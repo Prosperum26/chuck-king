@@ -18,6 +18,7 @@ NPC dùng **một hộp thoại** cho hai việc:
 
 | File | Vai trò |
 |------|--------|
+| `js/config/NPCDialogConfig.js` | **Config**: nội dung default (trêu chọc + dialog) và prompt gửi API; chỉnh file này để đổi lời / prompt |
 | `js/systems/AIMessageGenerator.js` | Default dialogs + taunt; gọi API cho dialog/taunt nếu có config |
 | `js/systems/NPCDialogSystem.js` | UI dialog box; lắng nghe `npcTaunt`, gọi `getDialogContent()` cho intro/stage/ending |
 | `js/systems/AIRuleEngine.js` | Trigger death/idle/stuck → gọi `AIMessageGenerator.generateMessage()` |
