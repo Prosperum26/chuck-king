@@ -183,7 +183,7 @@ function showStatus(message, type) {
     apiStatus.className = `api-status ${type}`;
 }
 
-function startGame() {
+async function startGame() {
     gameStarted = true;
     modal.classList.add('hidden');
     gameContainer.classList.remove('hidden');
@@ -192,17 +192,19 @@ function startGame() {
 
     if (gameAI.hasValidCredentials()) {
         aiMessageGenerator.setAPIEndpoint(gameAI.endpoint, gameAI.apiKey, gameAI.model);
-        console.log('✅ AI API configured for taunt messages');
+        console.log('✅ AI API configured');
     } else {
         console.log('ℹ️ Using hardcoded AI messages (no API configured)');
     }
 
     gameEngine.start();
 
-    // NPC dialog: intro (API hoặc default)
-    setTimeout(() => {
-        npcDialogSystem.showDialog('intro');
-    }, 600);
+    // Prefetch: dialogs (1 lần toàn game) + taunts (1 lần mỗi stage)
+    await aiMessageGenerator.prefetchAllDialogs();
+    aiMessageGenerator.prefetchStageTaunts('stage1', { deathCount: 0 });
+
+    // NPC dialog: intro (AI cache hoặc default)
+    setTimeout(() => npcDialogSystem.showDialog('intro'), 600);
 }
 
 function toggleApiModal() {
@@ -260,12 +262,9 @@ window.triggerNPCDialog = function(dialogKey) {
 };
 window.changeStage = function(stageName) {
     if (npcDialogSystem) npcDialogSystem.onStageChange(stageName);
+    const map = { easy: 'stage1', medium: 'stage2', hard: 'stage3', boss: 'stage4' };
+    const key = map[stageName] || (['stage1', 'stage2', 'stage3', 'stage4'].includes(stageName) ? stageName : null);
+    if (key) aiMessageGenerator.prefetchStageTaunts(key, { deathCount: eventTracker.getDeathCount() });
 };
 
-// Demo: nút test dialog (intro, stage1-4, ending)
-document.querySelectorAll('.demo-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const key = btn.getAttribute('data-dialog');
-        if (key && npcDialogSystem) npcDialogSystem.showDialog(key);
-    });
-});
+// (Demo buttons removed from game UI)

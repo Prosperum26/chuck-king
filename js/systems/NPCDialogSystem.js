@@ -14,6 +14,12 @@ export class NPCDialogSystem {
         this.isDialogOpen = false;
         this.autoCloseTimer = 0;
         this.dialogDuration = 5;
+        this.fullText = '';
+        this.charIndex = 0;
+        this.typingSpeed = 40; // chars per second
+        this.typingTimer = 0;
+        this.maxChars = 260;
+        this.isTyping = false;
 
         this.initializeDialogUI();
         this.setupEventListeners();
@@ -46,11 +52,8 @@ export class NPCDialogSystem {
      */
     showTaunt(npcName, message) {
         if (!this.dialogBox || !this.dialogContent || !this.dialogNPCName) return;
-        this.isDialogOpen = true;
-        this.dialogBox.classList.remove('hidden');
-        this.dialogBox.classList.add('show');
-        this.dialogNPCName.textContent = npcName;
-        this.dialogContent.textContent = message;
+        this.openDialogBox(npcName);
+        this.startTyping(message);
         this.autoCloseTimer = this.dialogDuration;
     }
 
@@ -69,13 +72,9 @@ export class NPCDialogSystem {
         if (!data || !data.dialogs || data.dialogs.length === 0) return;
 
         this.currentStage = dialogKey;
-        this.isDialogOpen = true;
-        if (this.dialogBox) {
-            this.dialogBox.classList.remove('hidden');
-            this.dialogBox.classList.add('show');
-        }
-        if (this.dialogNPCName) this.dialogNPCName.textContent = data.npcName;
-        if (this.dialogContent) this.dialogContent.textContent = data.dialogs[0];
+        this.openDialogBox(data.npcName);
+        const firstLine = data.dialogs[0];
+        this.startTyping(firstLine);
         this.autoCloseTimer = this.dialogDuration;
     }
 
@@ -88,6 +87,10 @@ export class NPCDialogSystem {
 
     closeDialog() {
         this.isDialogOpen = false;
+        this.isTyping = false;
+        this.fullText = '';
+        this.charIndex = 0;
+        this.typingTimer = 0;
         if (this.dialogBox) {
             this.dialogBox.classList.add('hidden');
             this.dialogBox.classList.remove('show');
@@ -95,9 +98,44 @@ export class NPCDialogSystem {
     }
 
     update(dt) {
-        if (this.isDialogOpen && this.autoCloseTimer > 0) {
+        if (this.isDialogOpen && this.isTyping && this.dialogContent && this.fullText) {
+            this.typingTimer += dt;
+            const charsToShow = Math.floor(this.typingTimer * this.typingSpeed);
+            if (charsToShow > this.charIndex) {
+                this.charIndex = Math.min(charsToShow, this.fullText.length);
+                this.dialogContent.textContent = this.fullText.slice(0, this.charIndex);
+                if (this.charIndex >= this.fullText.length) {
+                    this.isTyping = false;
+                    this.typingTimer = 0;
+                }
+            }
+        }
+
+        if (this.isDialogOpen && !this.isTyping && this.autoCloseTimer > 0) {
             this.autoCloseTimer -= dt;
             if (this.autoCloseTimer <= 0) this.closeDialog();
         }
+    }
+
+    openDialogBox(npcName) {
+        this.isDialogOpen = true;
+        if (this.dialogBox) {
+            this.dialogBox.classList.remove('hidden');
+            this.dialogBox.classList.add('show');
+        }
+        if (this.dialogNPCName && npcName) {
+            this.dialogNPCName.textContent = npcName;
+        }
+    }
+
+    startTyping(message) {
+        if (!this.dialogContent) return;
+        const raw = (message || '').toString().trim();
+        const limited = raw.length > this.maxChars ? raw.slice(0, this.maxChars) : raw;
+        this.fullText = limited;
+        this.charIndex = 0;
+        this.typingTimer = 0;
+        this.isTyping = true;
+        this.dialogContent.textContent = '';
     }
 }

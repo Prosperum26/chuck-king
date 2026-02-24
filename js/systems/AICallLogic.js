@@ -4,6 +4,7 @@
  * ❌ Không lưu key
  * ❌ Không đụng UI
  */
+import { callLLMText, detectProvider } from './LLMClient.js';
 export class AICallLogic {
     /**
      * Timeout dành cho mỗi API call (milliseconds)
@@ -137,68 +138,35 @@ Chỉ trả về JSON array thuần, không markdown không giải thích. Ví d
      * @private
      */
     static async callOpenAIAPI(apiKey, endpoint, model, prompt, maxTokens) {
-        const requestBody = {
-            model: model,
-            messages: [
-                {
-                    role: 'user',
-                    content: prompt
-                }
-            ],
-            max_tokens: maxTokens,
-            temperature: 0.8
-        };
+        const result = await callLLMText({
+            endpoint,
+            apiKey,
+            model,
+            prompt,
+            maxTokens,
+            temperature: 0.8,
+            timeoutMs: this.API_TIMEOUT
+        });
 
-        // Create abort controller for timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.API_TIMEOUT);
-
-        try {
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify(requestBody),
-                signal: controller.signal
-            });
-
-            clearTimeout(timeoutId);
-
-            // Handle HTTP responses
-            if (!response.ok) {
-                return this.handleHTTPError(response);
-            }
-
-            const data = await response.json();
-
-            // Validate response format
-            if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-                return {
-                    success: false,
-                    message: 'Invalid API response format',
-                    error: 'INVALID_RESPONSE'
-                };
-            }
-
-            const content = data.choices[0].message.content?.trim();
-            if (!content) {
-                return {
-                    success: false,
-                    message: 'Empty response from AI',
-                    error: 'EMPTY_RESPONSE'
-                };
-            }
-
-            return {
-                success: true,
-                content: content
-            };
-        } catch (error) {
-            clearTimeout(timeoutId);
-            throw error;
+        if (result.success) {
+            return { success: true, content: result.content };
         }
+
+        // Keep old error semantics for OpenAI(-compatible) where possible
+        const provider = result.provider || detectProvider(endpoint);
+        if (provider === 'openai') {
+            const match = String(result.message || '').match(/^HTTP\s+(\d{3})$/);
+            if (match) {
+                const fakeResponse = { status: Number(match[1]) };
+                return this.handleHTTPError(fakeResponse);
+            }
+        }
+
+        return {
+            success: false,
+            message: result.message || 'API error',
+            error: provider === 'gemini' ? 'GEMINI_ERROR' : 'API_ERROR'
+        };
     }
 
     /**
@@ -298,16 +266,8 @@ Chỉ trả về JSON array thuần, không markdown không giải thích. Ví d
             };
         }
 
-        // Validate API key format
         const apiKeyTrimmed = apiKey.trim();
-        if (!apiKeyTrimmed.startsWith('sk-')) {
-            return {
-                valid: false,
-                error: 'API key phải bắt đầu với "sk-".'
-            };
-        }
-
-        if (apiKeyTrimmed.length < 20) {
+        if (apiKeyTrimmed.length < 8) {
             return {
                 valid: false,
                 error: 'API key quá ngắn hoặc không hợp lệ.'
@@ -320,13 +280,6 @@ Chỉ trả về JSON array thuần, không markdown không giải thích. Ví d
             return {
                 valid: false,
                 error: 'API endpoint phải sử dụng HTTPS.'
-            };
-        }
-
-        if (!endpointTrimmed.includes('openai.com') && !endpointTrimmed.includes('api')) {
-            return {
-                valid: false,
-                error: 'API endpoint không hợp lệ.'
             };
         }
 

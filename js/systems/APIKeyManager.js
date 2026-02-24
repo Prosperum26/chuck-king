@@ -20,10 +20,7 @@ export class APIKeyManager {
         if (!this.apiKey) {
             return { valid: false, message: 'API key trống' };
         }
-        if (!this.apiKey.startsWith('sk-')) {
-            return { valid: false, message: 'API key phải bắt đầu với "sk-"' };
-        }
-        if (this.apiKey.length < 20) {
+        if (this.apiKey.length < 8) {
             return { valid: false, message: 'API key quá ngắn' };
         }
         return { valid: true, message: 'Format hợp lệ' };

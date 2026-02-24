@@ -11,6 +11,7 @@ import {
     DEFAULT_DIALOGS,
     DIALOG_PROMPTS,
 } from '../config/NPCDialogConfig.js';
+import { callLLMText } from './LLMClient.js';
 
 /** Dialog type keys */
 export const DIALOG_TYPES = ['intro', 'stage1', 'stage2', 'stage3', 'stage4', 'ending'];
@@ -26,6 +27,15 @@ export class AIMessageGenerator {
         this.model = 'gpt-3.5-turbo';
         this.callInProgress = false;
         this.dialogCallInProgress = false;
+
+        // Prefetch caches
+        this.dialogPrefetchDone = false;
+        this.dialogPrefetchInProgress = false;
+        this.prefetchedDialogs = null; // { npcName, dialogsByType: { intro:[], stage1:[], ... } }
+
+        this.currentStageKey = 'stage1';
+        this.stageTauntCache = new Map(); // stageKey -> string[]
+        this.stageTauntPrefetchInProgress = new Set(); // stageKey
     }
     
     /**
@@ -35,24 +45,27 @@ export class AIMessageGenerator {
      */
     async generateMessage(triggerType, context) {
         try {
-            // Try to call AI API first (nếu có API config)
+            // IMPORTANT: Taunt AI chỉ được tạo 1 lần ở đầu stage (prefetch).
+            // Ở đây chỉ lấy ngẫu nhiên từ cache của stage hiện tại.
             if (this.apiEndpoint && this.apiKey) {
-                const message = await this.callAIAPI(triggerType, context);
-                if (message) {
-                    this.currentMessage = message;
-                    this.dispatchMessage(message);
+                const pooled = this.getRandomTauntFromStagePool(this.currentStageKey);
+                if (pooled) {
+                    console.log(`[AIMessageGenerator] 🤖 AI(pool:${this.currentStageKey}) -> "${pooled}"`);
+                    this.currentMessage = pooled;
+                    this.dispatchMessage(pooled);
                     return;
                 }
+                console.log(`[AIMessageGenerator] ℹ️ AI pool empty for stage "${this.currentStageKey}" -> fallback DEFAULT`);
             }
         } catch (error) {
-            console.warn('[AIMessageGenerator] AI API call failed, using hardcoded:', error.message);
+            console.warn('[AIMessageGenerator] AI taunt pool failed, using hardcoded:', error.message);
         }
         
         // Fallback to hardcoded messages nếu không có API hoặc API fail
         const messages = this.hardcodedMessages[triggerType] || this.hardcodedMessages.death;
         const randomMessage = messages[Math.floor(Math.random() * messages.length)];
         this.currentMessage = randomMessage;
-        console.log(`[AIMessageGenerator] 💬 ${triggerType}: "${randomMessage}"`);
+        console.log(`[AIMessageGenerator] 💬 DEFAULT(${triggerType}): "${randomMessage}"`);
         this.dispatchMessage(randomMessage);
     }
     
@@ -62,95 +75,72 @@ export class AIMessageGenerator {
      * @param {object} context 
      * @returns {Promise<string|null>}
      */
-    async callAIAPI(triggerType, context) {
+    /**
+     * Prefetch taunts 20-30 câu cho 1 stage (gọi 1 lần ở đầu stage).
+     */
+    async prefetchStageTaunts(stageKey = 'stage1', context = {}) {
+        const key = stageKey || 'stage1';
+        this.currentStageKey = key;
+
         if (!this.apiEndpoint || !this.apiKey) {
-            return null;
+            console.log(`[AIMessageGenerator] 💬 DEFAULT(pool:${key}) - no API config, will use hardcoded per trigger`);
+            return { success: false, message: 'NO_API' };
         }
 
-        if (this.callInProgress) {
-            console.warn('[AIMessageGenerator] AI call already in progress, skipping...');
-            return null;
+        if (this.stageTauntCache.has(key)) {
+            console.log(`[AIMessageGenerator] 🤖 AI(pool:${key}) already prefetched (${this.stageTauntCache.get(key).length} lines)`);
+            return { success: true, message: 'CACHED', count: this.stageTauntCache.get(key).length };
+        }
+        if (this.stageTauntPrefetchInProgress.has(key)) {
+            console.log(`[AIMessageGenerator] ⏳ AI(pool:${key}) prefetch in progress...`);
+            return { success: false, message: 'IN_PROGRESS' };
         }
 
-        this.callInProgress = true;
-
+        this.stageTauntPrefetchInProgress.add(key);
         try {
-            const prompt = this.buildPrompt(triggerType, context);
-            
-            // Tạo timeout controller
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => {
-                controller.abort();
-                console.error('[AIMessageGenerator] ⏱️ API Timeout (15s)');
-            }, 15000);
+            const deathCount = Number(context?.deathCount || 0);
+            const prompt = `Bạn là NPC mỉa mai trong game platformer. Người chơi đang ở ${key}, đã chết/rơi ${deathCount} lần.
+Hãy tạo một danh sách câu trêu chọc (châm biếm/cà khịa) để dùng ngẫu nhiên trong stage này.
+Yêu cầu:
+- Trả về ĐÚNG một JSON array gồm 20 đến 30 câu tiếng Việt.
+- Mỗi phần tử là 1 câu, không markdown, không giải thích.
+- Tránh câu quá dài: mỗi câu <= 20 từ.
+Ví dụ: ["Câu 1.","Câu 2.","Câu 3..."]`;
 
-            const response = await fetch(this.apiEndpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.apiKey}`
-                },
-                body: JSON.stringify({
-                    model: this.model,
-                    messages: [
-                        {
-                            role: 'user',
-                            content: prompt
-                        }
-                    ],
-                    max_tokens: 40,
-                    temperature: 0.9
-                }),
-                signal: controller.signal
+            const result = await callLLMText({
+                endpoint: this.apiEndpoint,
+                apiKey: this.apiKey,
+                model: this.model,
+                prompt,
+                maxTokens: 700,
+                temperature: 0.85,
+                timeoutMs: 15000
             });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                // Log error nhưng không throw - fallback về hardcoded
-                const errorStatus = response.status;
-                let errorMsg = '';
-                
-                if (errorStatus === 401) {
-                    errorMsg = '❌ API Key sai hoặc hết hạn (401)';
-                } else if (errorStatus === 403) {
-                    errorMsg = '❌ Không có quyền sử dụng API (403)';
-                } else if (errorStatus === 429) {
-                    errorMsg = '⚠️ Hết quota/rate limit (429) - Thử lại sau';
-                } else if (errorStatus >= 500) {
-                    errorMsg = `❌ Server error (${errorStatus})`;
-                } else {
-                    errorMsg = `❌ API error ${errorStatus}`;
-                }
-                
-                console.error(`[AIMessageGenerator] ${errorMsg}`);
-                return null;
+            if (!result.success) {
+                console.warn(`[AIMessageGenerator] ❌ AI(pool:${key}) prefetch failed: ${result.message}`);
+                return { success: false, message: result.message || 'FAILED' };
             }
 
-            const data = await response.json();
-
-            // Parse OpenAI response
-            const message = data.choices?.[0]?.message?.content || null;
-
-            if (message && message.split(' ').length <= 20) {
-                console.log(`[AIMessageGenerator] 🤖 AI: "${message}"`);
-                return message.trim();
+            const list = this.parseJSONArray(result.content);
+            if (!list || list.length < 5) {
+                console.warn(`[AIMessageGenerator] ❌ AI(pool:${key}) invalid JSON array, fallback DEFAULT`);
+                return { success: false, message: 'INVALID_JSON' };
             }
 
-            return null;
-        } catch (error) {
-            // Handle timeout, network errors, etc
-            if (error.name === 'AbortError') {
-                console.error('[AIMessageGenerator] ⏱️ API Timeout');
-            } else if (error instanceof TypeError) {
-                console.error('[AIMessageGenerator] ❌ Network/URL error:', error.message);
-            } else {
-                console.error('[AIMessageGenerator] ❌ Error:', error.message);
-            }
-            return null;
+            // Clamp to 20-30 if model returns more
+            const trimmed = list.slice(0, 30);
+            this.stageTauntCache.set(key, trimmed);
+            console.log(`[AIMessageGenerator] ✅ AI(pool:${key}) prefetched ${trimmed.length} taunts`);
+            return { success: true, message: 'OK', count: trimmed.length };
         } finally {
-            this.callInProgress = false;
+            this.stageTauntPrefetchInProgress.delete(key);
         }
+    }
+
+    getRandomTauntFromStagePool(stageKey) {
+        const list = this.stageTauntCache.get(stageKey);
+        if (!list || list.length === 0) return null;
+        return list[Math.floor(Math.random() * list.length)];
     }
     
     /**
@@ -192,17 +182,16 @@ export class AIMessageGenerator {
             return { npcName: 'NPC', dialogs: ['...'] };
         }
 
-        if (this.apiEndpoint && this.apiKey && !this.dialogCallInProgress) {
-            try {
-                const result = await this.callDialogAPI(dialogType);
-                if (result && result.dialogs && result.dialogs.length > 0) {
-                    return result;
-                }
-            } catch (e) {
-                console.warn('[AIMessageGenerator] Dialog API failed, using default:', e.message);
+        // Dialog AI: chỉ gọi 1 lần ở đầu game (prefetchAllDialogs). Ở đây chỉ dùng cache.
+        if (this.dialogPrefetchDone && this.prefetchedDialogs?.dialogsByType?.[dialogType]) {
+            const dialogs = this.prefetchedDialogs.dialogsByType[dialogType];
+            if (dialogs && dialogs.length > 0) {
+                console.log(`[AIMessageGenerator] 🤖 AI(dialog:${dialogType}) from prefetched cache (${dialogs.length} lines)`);
+                return { npcName: this.prefetchedDialogs.npcName || defaultData.npcName, dialogs: [...dialogs] };
             }
         }
 
+        console.log(`[AIMessageGenerator] 💬 DEFAULT(dialog:${dialogType})`);
         return {
             npcName: defaultData.npcName,
             dialogs: [...defaultData.dialogs]
@@ -210,56 +199,87 @@ export class AIMessageGenerator {
     }
 
     /**
-     * Gọi API lấy dialog theo type, parse response thành nhiều dòng (chia bằng \n hoặc . )
+     * Prefetch toàn bộ dialog (intro/stage1-4/ending) bằng 1 API call duy nhất.
      */
-    async callDialogAPI(dialogType) {
-        if (!this.apiEndpoint || !this.apiKey) return null;
-        if (this.dialogCallInProgress) return null;
+    async prefetchAllDialogs() {
+        if (this.dialogPrefetchDone) {
+            console.log('[AIMessageGenerator] 🤖 AI(dialogs) already prefetched');
+            return { success: true, message: 'CACHED' };
+        }
+        if (this.dialogPrefetchInProgress) {
+            console.log('[AIMessageGenerator] ⏳ AI(dialogs) prefetch in progress...');
+            return { success: false, message: 'IN_PROGRESS' };
+        }
 
-        this.dialogCallInProgress = true;
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        if (!this.apiEndpoint || !this.apiKey) {
+            console.log('[AIMessageGenerator] 💬 DEFAULT(dialogs) - no API config, using built-in dialogs');
+            this.dialogPrefetchDone = true;
+            this.prefetchedDialogs = null;
+            return { success: false, message: 'NO_API' };
+        }
 
+        this.dialogPrefetchInProgress = true;
         try {
-            const prompt = this.buildDialogPrompt(dialogType);
-            const response = await fetch(this.apiEndpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.apiKey}`
-                },
-                body: JSON.stringify({
-                    model: this.model,
-                    messages: [{ role: 'user', content: prompt }],
-                    max_tokens: 300,
-                    temperature: 0.8
-                }),
-                signal: controller.signal
+            const prompt = `Bạn là NPC trong game platformer. Hãy tạo toàn bộ dialog cho cả game.
+Yêu cầu bắt buộc:
+- Trả về ĐÚNG một JSON object (không markdown, không giải thích).
+- JSON có dạng:
+{
+  "npcName": "Tên NPC",
+  "intro": ["...","..."],
+  "stage1": ["...","..."],
+  "stage2": ["...","..."],
+  "stage3": ["...","..."],
+  "stage4": ["...","..."],
+  "ending": ["...","..."]
+}
+- Mỗi key intro/stage*/ending là một JSON array 2-6 câu (mỗi câu là 1 string tiếng Việt).
+- Tông giọng: châm biếm nhẹ, gây cười, hợp game.
+- Không dùng ký tự xuống dòng trong từng string (mỗi phần tử là 1 câu).`;
+
+            const result = await callLLMText({
+                endpoint: this.apiEndpoint,
+                apiKey: this.apiKey,
+                model: this.model,
+                prompt,
+                maxTokens: 900,
+                temperature: 0.8,
+                timeoutMs: 20000
             });
-            clearTimeout(timeoutId);
-
-            if (!response.ok) return null;
-            const data = await response.json();
-            const raw = (data.choices?.[0]?.message?.content || '').trim();
-            if (!raw) return null;
-
-            // Chia output: ưu tiên xuống dòng, không thì chia theo câu (dấu chấm + space)
-            let lines = raw.split(/\n+/).map(s => s.trim()).filter(Boolean);
-            if (lines.length <= 1) {
-                lines = raw.split(/\.\s+/).map(s => (s.trim() + (s.trim().endsWith('.') ? '' : '.')).trim()).filter(Boolean);
+            if (!result.success) {
+                console.warn(`[AIMessageGenerator] ❌ AI(dialogs) prefetch failed: ${result.message}`);
+                this.dialogPrefetchDone = true; // avoid spamming API calls
+                this.prefetchedDialogs = null;
+                return { success: false, message: result.message || 'FAILED' };
             }
-            if (lines.length === 0) lines = [raw];
 
-            const defaultData = this.defaultDialogs[dialogType] || { npcName: '👾 NPC' };
-            return {
-                npcName: defaultData.npcName,
-                dialogs: lines
-            };
-        } catch (err) {
-            if (err.name === 'AbortError') console.error('[AIMessageGenerator] Dialog API timeout');
-            return null;
+            const obj = this.parseJSONObject(result.content);
+            const npcName = typeof obj?.npcName === 'string' ? obj.npcName.trim() : null;
+            const keys = ['intro', 'stage1', 'stage2', 'stage3', 'stage4', 'ending'];
+            const dialogsByType = {};
+            for (const k of keys) {
+                const arr = Array.isArray(obj?.[k]) ? obj[k] : null;
+                if (!arr) continue;
+                dialogsByType[k] = arr
+                    .filter((s) => typeof s === 'string')
+                    .map((s) => s.trim())
+                    .filter(Boolean);
+            }
+
+            const hasAny = Object.values(dialogsByType).some((a) => Array.isArray(a) && a.length > 0);
+            if (!hasAny) {
+                console.warn('[AIMessageGenerator] ❌ AI(dialogs) invalid JSON content, fallback DEFAULT');
+                this.dialogPrefetchDone = true;
+                this.prefetchedDialogs = null;
+                return { success: false, message: 'INVALID_JSON' };
+            }
+
+            this.prefetchedDialogs = { npcName, dialogsByType };
+            this.dialogPrefetchDone = true;
+            console.log('[AIMessageGenerator] ✅ AI(dialogs) prefetched for whole game');
+            return { success: true, message: 'OK' };
         } finally {
-            this.dialogCallInProgress = false;
+            this.dialogPrefetchInProgress = false;
         }
     }
 
@@ -277,6 +297,32 @@ export class AIMessageGenerator {
         this.apiEndpoint = endpoint;
         this.apiKey = apiKey;
         this.model = model;
+    }
+
+    parseJSONArray(content) {
+        if (!content || typeof content !== 'string') return null;
+        const trimmed = content.trim().replace(/^```json\s*|\s*```$/g, '').trim();
+        try {
+            const arr = JSON.parse(trimmed);
+            if (!Array.isArray(arr)) return null;
+            return arr
+                .filter((x) => typeof x === 'string')
+                .map((s) => s.trim())
+                .filter(Boolean);
+        } catch (_) {
+            return null;
+        }
+    }
+
+    parseJSONObject(content) {
+        if (!content || typeof content !== 'string') return null;
+        const trimmed = content.trim().replace(/^```json\s*|\s*```$/g, '').trim();
+        try {
+            const obj = JSON.parse(trimmed);
+            return obj && typeof obj === 'object' ? obj : null;
+        } catch (_) {
+            return null;
+        }
     }
 }
 

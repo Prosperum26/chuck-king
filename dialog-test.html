@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Chuck King - NPC Dialog Test</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <!-- API Key Input Modal -->
+    <div id="api-key-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Cấu Hình AI API</h2>
+                <p style="font-size: 0.85em; margin-top: 5px; color: #666;">
+                    Tùy chọn - Để trống để test dialog với hardcoded messages
+                </p>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">
+                    🤖 <strong>AI API</strong> sẽ sinh ra nội dung dialog và câu trêu chọc AI ngẫu nhiên.
+                    <br><br>
+                    <strong>Chưa có API Key?</strong>
+                    <a href="docs/GET_API_KEY.md" target="_blank" style="color: #0066cc; text-decoration: underline;">
+                        📖 Xem hướng dẫn lấy API Key
+                    </a>
+                </p>
+
+                <div class="form-group">
+                    <label for="api-endpoint">
+                        🔗 AI API Endpoint:
+                        <span title="Bạn có thể dùng OpenAI hoặc OpenAI-compatible endpoint" style="cursor: help; color: #0066cc;">ⓘ</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="api-endpoint"
+                        class="form-input"
+                        placeholder="OpenAI: https://api.openai.com/v1/chat/completions | Gemini: https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+                        value="https://api.openai.com/v1/chat/completions"
+                        title="Endpoint để gọi Chat Completions API">
+                    <small style="color: #666; margin-top: 3px; display: block;">
+                        💡 Gemini: dùng endpoint dạng ...:generateContent và nhập API key (key sẽ gửi qua header x-goog-api-key)
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label for="api-key">
+                        🔑 API Key:
+                        <span title="OpenAI/OpenAI-compatible thường dùng Bearer token; Gemini dùng key query param" style="cursor: help; color: #0066cc;">ⓘ</span>
+                    </label>
+                    <input
+                        type="password"
+                        id="api-key"
+                        class="form-input"
+                        placeholder="OpenAI key hoặc Gemini key"
+                        autocomplete="off">
+                    <small style="color: #666; margin-top: 3px; display: block;">
+                        ⚠️ Giữ bí mật - Không share với ai
+                    </small>
+                </div>
+
+                <div id="api-status" class="api-status hidden"></div>
+
+                <button id="test-api-btn" class="btn btn-secondary">🔍 Kiểm Tra API</button>
+            </div>
+
+            <div class="modal-footer">
+                <button id="close-api-btn" class="btn btn-outline">Đóng</button>
+                <button id="save-api-btn" class="btn btn-primary">Lưu &amp; dùng API cho dialog</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="dialog-test-container" class="dialog-test-container">
+        <div class="dialog-test-header">
+            <div class="dialog-test-header-left">
+                <h1>NPC Dialog / Taunt Test</h1>
+                <p class="dialog-test-subtitle">
+                    Test dialog mặc định hoặc từ AI API, với hiệu ứng hiện chữ dần.
+                </p>
+            </div>
+            <div class="dialog-test-header-right">
+                <button id="toggle-api-btn" class="control-btn" title="Bật/tắt cửa sổ cấu hình API">⚙️ API</button>
+                <span id="api-mode-label" class="api-mode-label">Mode: Hardcoded default</span>
+            </div>
+        </div>
+
+        <div class="dialog-test-controls">
+            <div class="form-group">
+                <label for="dialog-key-select">Chọn loại dialog:</label>
+                <select id="dialog-key-select" class="form-input">
+                    <option value="intro">Intro</option>
+                    <option value="stage1">Stage 1</option>
+                    <option value="stage2">Stage 2</option>
+                    <option value="stage3">Stage 3</option>
+                    <option value="stage4">Stage 4</option>
+                    <option value="ending">Ending</option>
+                </select>
+            </div>
+            <div class="dialog-test-buttons">
+                <button id="show-dialog-btn" class="btn btn-primary">▶️ Hiển thị dialog</button>
+                <button id="show-taunt-btn" class="btn btn-secondary">💢 Test câu trêu (death)</button>
+            </div>
+            <p class="dialog-test-hint">
+                Nếu chưa cấu hình API, hệ thống sẽ luôn dùng nội dung mặc định (default). Khi có API hợp lệ,
+                dialog và câu trêu sẽ dùng AI output (khi API trả về hợp lệ).
+            </p>
+        </div>
+
+        <div id="ui-overlay">
+            <div id="npc-dialog-box" class="npc-dialog-box hidden">
+                <div class="npc-dialog-header">
+                    <span id="npc-name" class="npc-name">NPC</span>
+                    <button id="npc-dialog-close-btn" class="npc-dialog-close-btn" title="Đóng">×</button>
+                </div>
+                <div class="npc-dialog-body">
+                    <div id="npc-dialog-text" class="npc-dialog-text">
+                        Xin chào!
+                    </div>
+                </div>
+                <div class="npc-dialog-footer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./js/dialog-test.js"></script>
+</body>
+</html>
+
