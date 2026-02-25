@@ -1,353 +1,446 @@
 const PHYSICS = {
-  gravity: 1.0,
-  fallMultiplier: 1.6,
-  maxFallSpeed: 30,
-  accel: 1.5,
-  maxSpeed: 12,
-  friction: 0.82,
-  jumpChargeSpeed: 2.5,
-  maxJumpForce: 28,
-  minJumpForce: 12,
-  iceFriction: 0.98,
-  airResistance: 0.99,
-  bounceForce: 25,
+    gravity: 1.0,       
+    fallMultiplier: 1.6,   
+    maxFallSpeed: 30,     
+
+    accel: 1.5,          
+    maxSpeed: 12,         
+    friction: 0.82,       
+    
+    jumpChargeSpeed: 2.5,  
+    maxJumpForce: 28,      
+    minJumpForce: 12,     
+    
+    iceFriction: 0.98,
+    airResistance: 0.99,
+    bounceForce: 25
 };
 
 export class Player {
-  constructor(x, y, eventTracker) {
-    this.startX = x;
-    this.startY = y;
-    this.x = x;
-    this.y = y;
-    this.w = 50;
-    this.h = 50;
-    this.vx = 0;
-    this.vy = 0;
-    this.isGrounded = false;
-    this.charge = 0;
-    this.platformType = "air";
-    this.facingRight = true;
-    this.eventTracker = eventTracker;
-
-    this.lastGroundedY = y;
-
-    this.loadSprites();
-
-    this.currentState = "idle";
-    this.currentFrame = 0;
-    this.frameTimer = 0;
-  }
-
-  loadSprites() {
-    this.sprites = {
-      idle: new Image(),
-      walk: new Image(),
-      jump: new Image(),
-      fall: new Image(),
-    };
-
-    this.sprites.idle.src = "../assets/idle.png";
-    this.sprites.walk.src = "../assets/Walk.png";
-    this.sprites.jump.src = "../assets/Jump.png";
-    this.sprites.fall.src = "../assets/Fall.png";
-
-    this.animations = {
-      idle: {
-        img: this.sprites.idle,
-        totalFrames: 2,
-        frameSpeed: 200,
-        frameWidth: 32,
-        frameHeight: 32,
-      },
-      walk: {
-        img: this.sprites.walk,
-        totalFrames: 6,
-        frameSpeed: 800,
-        frameWidth: 32,
-        frameHeight: 32,
-      },
-      run: {
-        img: this.sprites.walk,
-        totalFrames: 6,
-        frameSpeed: 500,
-        frameWidth: 32,
-        frameHeight: 32,
-      },
-      jump: {
-        img: this.sprites.jump,
-        totalFrames: 6,
-        frameSpeed: 600,
-        frameWidth: 32,
-        frameHeight: 32,
-      },
-      fall: {
-        img: this.sprites.fall,
-        totalFrames: 6,
-        frameSpeed: 600,
-        frameWidth: 32,
-        frameHeight: 32,
-      },
-    };
-  }
-
-  reset() {
-    this.x = this.startX;
-    this.y = this.startY;
-    this.vx = 0;
-    this.vy = 0;
-    this.charge = 0;
-    if (this.eventTracker) this.eventTracker.track("death");
-    
-    this.lastGroundedY = this.startY;
-    this.currentState = "idle";
-  }
-
-  jump() {
-    if (!this.isGrounded) return;
-    const force = Math.max(this.charge, PHYSICS.minJumpForce);
-    this.vy = -force;
-    this.isGrounded = false;
-    this.charge = 0;
-    this.platformType = "air";
-    if (this.eventTracker) this.eventTracker.track("jump");
-  }
-
-  update(input, platforms, canvasWidth, canvasHeight, deltaTime = 16.67) {
-    if (this.isGrounded && this.standingOnPlatform && this.platformType === "moving") {
-      const platformMovement = this.standingOnPlatform.speed * this.standingOnPlatform.direction;
-      this.x += platformMovement;
-    }
-
-    let accel = PHYSICS.accel;
-    if (this.platformType === "ice") accel *= 0.1;
-
-    if (this.isGrounded) {
-      if (input.keys["ArrowLeft"] || input.keys["KeyA"]) {
-        this.vx -= accel;
-        this.facingRight = false;
-      }
-      if (input.keys["ArrowRight"] || input.keys["KeyD"]) {
-        this.vx += accel;
+    constructor(x, y, eventTracker) {
+        this.startX = x;
+        this.startY = y;
+        this.x = x;
+        this.y = y;
+        this.w = 70; // kích thước rộng của nhân vật
+        this.h = 70; // kích thước cao của nhân vật
+        this.vx = 0;
+        this.vy = 0;
+        this.isGrounded = false;
+        this.charge = 0;
+        this.platformType = "air";
         this.facingRight = true;
-      }
+        this.eventTracker = eventTracker; 
+
+        this.isLanding = false; 
+        this.fallStunTimer = 0; // Biến đếm thời gian nằm bẹp
+        this.peakY = y;         
+
+        // ==========================================
+        // CẤU HÌNH ANIMATION
+        // ==========================================
+        this.runImage = new Image();
+        this.runImage.src = '../../assets/Walk.png'; 
+
+        this.idleImage = new Image();
+        this.idleImage.src = '../../assets/idle.png'; 
+
+        this.jumpImage = new Image();
+        this.jumpImage.src = '../../assets/Jump.png'; 
+
+        this.fallImage = new Image();
+        this.fallImage.src = '../../assets/Fall.png'; 
+        
+        this.appearingImage = new Image();
+        this.appearingImage.src = '../../assets/Appearing (96x96).png'; 
+
+        this.disappearingImage = new Image();
+        this.disappearingImage.src = '../../assets/Desappearing (96x96).png'; 
+        
+        this.frameX = 0;           
+        
+        this.maxRunFrames = 6;     
+        this.maxIdleFrames = 2;   
+        this.maxJumpFrames = 6;    
+        this.maxFallFrames = 6;    
+        this.maxAppearingFrames = 7; 
+        this.maxDisappearingFrames = 7; 
+        
+        this.fps = 16;             
+        this.frameInterval = 1000 / this.fps; 
+        this.frameTimer = 0;       
+        
+        this.currentState = 'appearing'; 
+        // ==========================================
     }
 
-    if (input.keys["Space"] && this.isGrounded) {
-      this.charge = Math.min(this.charge + PHYSICS.jumpChargeSpeed, PHYSICS.maxJumpForce);
+    reset() {
+        this.x = this.startX;
+        this.y = this.startY;
+        this.vx = 0;
+        this.vy = 0;
+        this.charge = 0;
+        
+        this.currentState = 'appearing';
+        this.frameX = 0;
+        this.frameTimer = 0;
+        this.facingRight = true;
+        this.isLanding = false; 
+        this.fallStunTimer = 0; // Reset cả thời gian ngã
+        this.peakY = this.startY; 
     }
-    
-    if (this.vx > PHYSICS.maxSpeed) this.vx = PHYSICS.maxSpeed;
-    if (this.vx < -PHYSICS.maxSpeed) this.vx = -PHYSICS.maxSpeed;
-    
-    let friction = PHYSICS.friction;
-    if (!this.isGrounded) friction = PHYSICS.airResistance;
-    else if (this.platformType === "ice") friction = PHYSICS.iceFriction;
-    
-    this.vx *= friction;
-    
-    if (this.vy < 0) this.vy += PHYSICS.gravity;
-    else this.vy += PHYSICS.gravity * PHYSICS.fallMultiplier;
-    this.vy = Math.min(this.vy, PHYSICS.maxFallSpeed);
 
-    const previousGrounded = this.isGrounded;
-
-    this.handleCollision(platforms);
-
-    if (!previousGrounded && this.isGrounded) {
-      if (this.y > this.lastGroundedY + 5) {
-        if (this.eventTracker?.track) {
-          this.eventTracker.track("fall");
+    die() {
+        if (this.currentState !== 'disappearing') {
+            this.currentState = 'disappearing';
+            this.frameX = 0;
+            this.frameTimer = 0;
+            this.vx = 0;
+            this.vy = 0; 
+            if (this.eventTracker) this.eventTracker.track('death');
         }
-      }
     }
 
-    if (this.isGrounded) {
-      this.lastGroundedY = this.y;
+    jump() {
+        if (!this.isGrounded || this.currentState === 'appearing' || this.currentState === 'disappearing') return;
+        
+        const force = Math.max(this.charge, PHYSICS.minJumpForce);
+        this.vy = -force;
+        this.vx = this.vx;
+        this.isGrounded = false;
+        this.charge = 0;
+        this.platformType = "air";
+        
+        this.isLanding = false; 
+        this.fallStunTimer = 0;
+
+        if (this.eventTracker) this.eventTracker.track('jump');
     }
 
-    if (this.x < 0) {
-      this.x = 0;
-      this.vx = 0;
-    }
-    if (this.x + this.w > canvasWidth) {
-      this.x = canvasWidth - this.w;
-      this.vx = 0;
-    }
-
-    if (this.y > canvasHeight) {
-      this.reset();
-    }
-
-    this.determineAnimState();
-    this.updateAnimation(deltaTime);
-  }
-
-  determineAnimState() {
-    if (!this.isGrounded) {
-      if (this.vy >= 0) {
-        this.currentState = "fall";
-      } else {
-        this.currentState = "jump";
-      }
-      return;
-    }
-
-    const speed = Math.abs(this.vx);
-    if (speed < 0.5) {
-      this.currentState = "idle";
-    } else if (speed < PHYSICS.maxSpeed * 0.7) {
-      this.currentState = "walk";
-    } else {
-      this.currentState = "run";
-    }
-  }
-
-  updateAnimation(deltaTime) {
-    const animConfig = this.animations[this.currentState];
-    
-    if (animConfig.totalFrames <= 1) {
-      this.currentFrame = animConfig.fixedFrameIndex || 0;
-      return;
-    }
-
-    this.frameTimer += deltaTime;
-    
-    if (this.frameTimer >= animConfig.frameSpeed) {
-      this.frameTimer = 0;
-      this.currentFrame++;
-      
-      if (this.currentFrame >= animConfig.totalFrames) {
-        this.currentFrame = 0;
-      }
-    }
-  }
-  
-  handleCollision(platforms) {
-    this.x += this.vx;
-    platforms.forEach((p) => {
-      if ((p.type === "broken" && p.isBroken) || p.type === "fake" || p.type === "oneWay") return;
-      
-      if (this.checkCollision(p)) {
-        const playerCenter = this.x + this.w / 2;
-        const platformCenter = p.x + p.w / 2;
-        if (playerCenter < platformCenter) {
-          this.x = p.x - this.w;
-        } else {
-          this.x = p.x + p.w;
+    update(input, platforms, canvasWidth, canvasHeight, deltaTime = 16) {
+        if (this.currentState === 'disappearing') {
+            this.updateAnimationOnly(deltaTime);
+            return; 
         }
-        let platformVel = p.type === "moving" ? p.speed * p.direction : 0;
-        this.vx = (platformVel - this.vx) * 0.4;
-        if (Math.abs(this.vx) < 1) {
-          this.vx = playerCenter < platformCenter ? -2 : 2;
-        }
-      }
-    });
 
-    this.y += this.vy;
-    let foundGround = false;
-    
-    platforms.forEach((p) => {
-      if ((p.type === "broken" && p.isBroken) || p.type === "fake") return;
-      if (this.checkCollision(p)) {
-        if (p.type === "oneWay") {
-          if (this.vy > 0 && this.y + this.h - this.vy <= p.y + 5) {
-            this.y = p.y - this.h;
-            this.vy = 0;
-            this.isGrounded = true;
-            this.standingOnPlatform = p;
-            this.platformType = p.type;
-            foundGround = true;
-          }
-        } else {
-          if (this.vy > 0) {
-            this.y = p.y - this.h;
-            this.vy = 0;
-            foundGround = true;
-            this.isGrounded = true;
-            this.platformType = p.type;
-            this.standingOnPlatform = p;
-            if (p.type === "bouncy") {
-              this.vy = -PHYSICS.bounceForce;
-              this.isGrounded = false;
-              if (this.eventTracker?.track) {
-                this.eventTracker.track("bounce");
-              }
+        if (this.isGrounded && this.standingOnPlatform && this.platformType === "moving") {
+            const platformMovement = this.standingOnPlatform.speed * this.standingOnPlatform.direction;
+            this.x += platformMovement;
+        }
+        
+        if (this.currentState !== 'appearing') {
+            
+            // ==========================================
+            // LOGIC NGẮT THỜI GIAN NGÃ BẰNG NÚT BẤM
+            // ==========================================
+            if (this.isLanding) {
+                this.fallStunTimer -= deltaTime; // Trừ dần thời gian
+                
+                // Nếu hết 1 giây HOẶC người chơi bấm phím di chuyển/nhảy
+                if (this.fallStunTimer <= 0 || 
+                    input.keys["ArrowLeft"] || input.keys["KeyA"] || 
+                    input.keys["ArrowRight"] || input.keys["KeyD"] || 
+                    input.keys["Space"]) {
+                    
+                    this.isLanding = false; // Ngắt trạng thái ngã lập tức
+                    this.fallStunTimer = 0;
+                }
             }
-          } else if (this.vy < 0) {
-            this.y = p.y + p.h;
-            this.vy = 0;
-          }
+            // ==========================================
+
+            let accel = PHYSICS.accel;
+            if (this.platformType === "ice") accel *= 0.1; 
+
+            if (this.isGrounded) {
+                if (input.keys["ArrowLeft"] || input.keys["KeyA"]) {
+                    this.vx -= accel;
+                    this.facingRight = false;
+                }
+                if (input.keys["ArrowRight"] || input.keys["KeyD"]) {
+                    this.vx += accel;
+                    this.facingRight = true;
+                }
+            }
+
+            if (input.keys["Space"] && this.isGrounded) {
+                this.charge = Math.min(this.charge + PHYSICS.jumpChargeSpeed, PHYSICS.maxJumpForce);
+            }
+        } else {
+            this.vx *= 0.5; 
+            this.charge = 0;
+        }
+
+        if (this.vx > PHYSICS.maxSpeed) this.vx = PHYSICS.maxSpeed;
+        if (this.vx < -PHYSICS.maxSpeed) this.vx = -PHYSICS.maxSpeed;
+
+        let friction = PHYSICS.friction;
+        if (!this.isGrounded) friction = PHYSICS.airResistance;
+        else if (this.platformType === "ice") friction = PHYSICS.iceFriction;
+
+        this.vx *= friction;
+
+        if (this.vy < 0) this.vy += PHYSICS.gravity;
+        else this.vy += PHYSICS.gravity * PHYSICS.fallMultiplier;
+        this.vy = Math.min(this.vy, PHYSICS.maxFallSpeed);
+
+        this.x += this.vx;
+        platforms.forEach(p => {
+            if ((p.type === "broken" && p.isBroken) || p.type === "fake" || p.type === "oneWay") return;
+            
+            if (this.checkCollision(p)) {
+                const playerCenter = this.x + this.w / 2;
+                const platformCenter = p.x + p.w / 2;
+
+                if (playerCenter < platformCenter) {
+                    this.x = p.x - this.w;
+                } else {
+                    this.x = p.x + p.w;
+                }
+
+                let platformVel = (p.type === "moving") ? p.speed * p.direction : 0;
+                this.vx = (platformVel - this.vx) * 0.4;
+
+                if (Math.abs(this.vx) < 1) {
+                    this.vx = (playerCenter < platformCenter) ? -2 : 2;
+                }
+            }
+        });
+
+        let previousGrounded = this.isGrounded;
+
+        this.y += this.vy;
+        let foundGround = false; 
+
+        platforms.forEach(p => {
+            if ((p.type === "broken" && p.isBroken) || p.type === "fake") return; 
+            if (this.checkCollision(p)) {
+                if (p.type === "oneWay") {
+                    if (this.vy > 0 && (this.y + this.h - this.vy) <= p.y + 5) {
+                        this.y = p.y - this.h;
+                        this.vy = 0;
+                        this.isGrounded = true;
+                        this.standingOnPlatform = p;
+                        this.platformType = p.type;
+                        foundGround = true;
+                    }
+                }
+                else {
+                    if (this.vy > 0) {
+                        this.y = p.y - this.h;
+                        this.vy = 0;
+                        foundGround = true; 
+                        this.isGrounded = true;
+                        this.platformType = p.type;
+                        this.standingOnPlatform = p;
+
+                        if (p.type === "bouncy") {
+                            this.vy = -PHYSICS.bounceForce;
+                            this.isGrounded = false;
+                            if (this.eventTracker?.track) { 
+                                this.eventTracker.track('bounce'); 
+                            }
+                        }
+                    } 
+                    else if (this.vy < 0) {
+                        this.y = p.y + p.h;
+                        this.vy = 0;
+                    }
+                }
+            }
+        });
+
+        if (!foundGround) {
+            this.isGrounded = false;
+            this.standingOnPlatform = null;
+            this.platformType = "air";
+        }
+        
+        // ==========================================
+        // KÍCH HOẠT HIỆU ỨNG NGÃ
+        // ==========================================
+
+        if (!previousGrounded && this.isGrounded) {
+            let fallDistance = this.y - this.peakY;
+            let fallThreshold = canvasHeight / 2; 
+            
+            if (fallDistance > fallThreshold) {
+                this.isLanding = true;
+                this.fallStunTimer = 1000; // Thiết lập thời gian nằm bẹp 1 giây (1000ms)
+                this.currentState = 'fall';
+                
+                this.frameX = 4; // Nhảy thẳng đến frame đập mặt
+                this.frameTimer = 0;
+                this.vx = 0; 
+            }
+            
+            this.peakY = this.y; 
+            
+        } else if (!this.isGrounded) {
+            if (this.y < this.peakY) {
+                this.peakY = this.y;
+            }
+        } else {
+            this.peakY = this.y;
+        }
+
+        if (this.x < 0) {
+            this.x = 0;
+            this.vx = 0; 
+        }
+        if (this.x + this.w > canvasWidth) {
+            this.x = canvasWidth - this.w;
+            this.vx = 0;
+        }
+
+        if (this.y > canvasHeight) {
+            this.die();
+        }
+
+        this.updateAnimationOnly(deltaTime);
+    }
+
+    updateAnimationOnly(deltaTime) {
+        let nextState = this.currentState;
+        
+        if (this.currentState !== 'appearing' && this.currentState !== 'disappearing') {
+            if (!this.isGrounded) {
+                this.isLanding = false; 
+                nextState = 'jump'; 
+            } 
+            else if (this.isLanding) {
+                nextState = 'fall'; 
+            } 
+            else if (Math.abs(this.vx) > 0.5) {
+                nextState = 'run';
+            } else {
+                nextState = 'idle';
+            }
+        }
+
+        if (this.currentState !== nextState) {
+            this.currentState = nextState;
+            this.frameX = 0;
+            this.frameTimer = 0;
+        }
+
+        this.frameTimer += deltaTime;
+        if (this.frameTimer > this.frameInterval) {
+            this.frameX++;
+            
+            let maxFrames = 1;
+            if (this.currentState === 'run') maxFrames = this.maxRunFrames;
+            else if (this.currentState === 'idle') maxFrames = this.maxIdleFrames;
+            else if (this.currentState === 'jump') maxFrames = this.maxJumpFrames;
+            else if (this.currentState === 'fall') maxFrames = this.maxFallFrames;
+            else if (this.currentState === 'appearing') maxFrames = this.maxAppearingFrames;
+            else if (this.currentState === 'disappearing') maxFrames = this.maxDisappearingFrames;
+            
+            if (this.frameX >= maxFrames) {
+                if (this.currentState === 'appearing') {
+                    this.currentState = 'idle';
+                    this.frameX = 0;
+                } else if (this.currentState === 'disappearing') {
+                    this.reset(); 
+                } else if (this.currentState === 'fall') {
+                    if (this.isLanding) {
+                        // Nếu vẫn còn thời gian ngã, GIỮ ảnh ở frame cuối cùng (nằm bẹp)
+                        this.frameX = maxFrames - 1; 
+                    } else {
+                        // Đã hết thời gian ngã hoặc bị ngắt, reset frame
+                        this.frameX = 0;
+                    }
+                } else {
+                    this.frameX = 0;
+                }
+            }
+            this.frameTimer = 0;
+        }
+    }
+
+    checkCollision(p) {
+        return (
+            this.x + this.w > p.x &&
+            this.x < p.x + p.w &&
+            this.y + this.h > p.y &&
+            this.y < p.y + p.h
+        );
+    }
+
+    draw(ctx, camera) {
+        let screenX = this.x;
+        let screenY = this.y;
+        
+        if (camera && typeof camera.worldToScreen === 'function') {
+            const screenPos = camera.worldToScreen(this.x, this.y);
+            screenX = screenPos.screenX;
+            screenY = screenPos.screenY;
+        }
+
+        let currentImage;
+        let sWidth = 32;   
+        let sHeight = 32;  
+        let dWidth = this.w; 
+        let dHeight = this.h;
+        let drawOffsetX = 0; 
+        let drawOffsetY = 0;
+
+        if (this.currentState === 'run') currentImage = this.runImage;
+        else if (this.currentState === 'jump') currentImage = this.jumpImage;
+        else if (this.currentState === 'fall') currentImage = this.fallImage;
+        else if (this.currentState === 'appearing' || this.currentState === 'disappearing') {
+            currentImage = this.currentState === 'appearing' ? this.appearingImage : this.disappearingImage;
+            sWidth = 96;  
+            sHeight = 96; 
+            dWidth = this.w * 3;  
+            dHeight = this.h * 3; 
+            drawOffsetX = -(dWidth - this.w) / 2;
+            drawOffsetY = -(dHeight - this.h) / 2;
+        }
+        else currentImage = this.idleImage;
+
+        if (currentImage && currentImage.complete && currentImage.naturalWidth !== 0) {
+            ctx.save();
+            
+            if (!this.facingRight && this.currentState !== 'appearing' && this.currentState !== 'disappearing') {
+                ctx.translate(screenX + this.w, screenY); 
+                ctx.scale(-1, 1); 
+                
+                ctx.drawImage(
+                    currentImage, 
+                    this.frameX * sWidth, 0, sWidth, sHeight, 
+                    0, 0, dWidth, dHeight  
+                );
+            } else {
+                ctx.drawImage(
+                    currentImage, 
+                    this.frameX * sWidth, 0, sWidth, sHeight, 
+                    screenX + drawOffsetX, screenY + drawOffsetY, dWidth, dHeight
+                );
+            }
+            ctx.restore();
+        } else {
+            ctx.fillStyle = "#ff4444";
+            ctx.fillRect(screenX, screenY, this.w, this.h);
+        }
+
+        // ==========================================
+        // VẼ THANH SẠC LỰC NHẢY (ĐÃ CĂN GIỮA THEO KÍCH THƯỚC MỚI)
+        // ==========================================
+        if (this.charge > 0 && this.currentState !== 'appearing' && this.currentState !== 'disappearing') {
+            // Tính điểm chính giữa của nhân vật
+            let centerX = screenX + this.w / 2;
+            
+            ctx.fillStyle = "lime";
+            ctx.beginPath();
+            // Vẽ chấm tròn canh giữa, cách đỉnh đầu 15px
+            ctx.arc(centerX, screenY - 15, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = "yellow";
+            // Thanh sạc dài 40px, xê dịch sang trái 20px để căn giữa
+            let barWidth = 40;
+            let currentChargeWidth = (this.charge / PHYSICS.maxJumpForce) * barWidth;
+            ctx.fillRect(centerX - barWidth / 2, screenY - 10, currentChargeWidth, 5);
         }
       }
-    });
-    
-    if (!foundGround) {
-      this.isGrounded = false;
-      this.standingOnPlatform = null;
-      this.platformType = "air";
-    }
-  }
-
-  checkCollision(p) {
-    return (
-      this.x + this.w > p.x &&
-      this.x < p.x + p.w &&
-      this.y + this.h > p.y &&
-      this.y < p.y + p.h
-    );
-  }
-
-  draw(ctx) {
-    const anim = this.animations[this.currentState];
-    let sx = this.currentFrame * anim.frameWidth;
-    let sy = 0;
-
-    const scale = 1.5; 
-    const drawW = this.w * scale;
-    const drawH = this.h * scale;
-    const drawX = this.x - (drawW - this.w) / 2;
-    const drawY = this.y - (drawH - this.h);
-
-    ctx.save();
-
-    if (!this.facingRight) {
-      ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
-      ctx.scale(-1, 1);
-      ctx.translate(-(this.x + this.w / 2), -(this.y + this.h / 2));
-    }
-
-    if (anim.img.complete) {
-      ctx.drawImage(
-        anim.img,
-        sx,
-        sy,
-        anim.frameWidth,
-        anim.frameHeight,
-        drawX,
-        drawY,
-        drawW,
-        drawH
-      );
-    } else {
-      ctx.fillStyle = "#ff4444";
-      ctx.fillRect(this.x, this.y, this.w, this.h);
-    }
-
-    ctx.restore();
-
-    if (this.charge > 0) {
-      ctx.fillStyle = "lime";
-      ctx.beginPath();
-      ctx.arc(this.x + 15, this.y - 15, 5, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "yellow";
-      ctx.fillRect(
-        this.x - 5,
-        this.y - 10,
-        (this.charge / PHYSICS.maxJumpForce) * 40,
-        5
-      );
-    }
-  }
 }
