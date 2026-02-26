@@ -49,28 +49,67 @@ const uiManager = new UIManager();
 const npcDialogSystem = new NPCDialogSystem(aiMessageGenerator);
 
 // ===== Platforms (Dev_Game map: moving, broken, bouncy, ice, oneWay, fake) =====
-const platforms = [
-    new Platform(-2000, 1000, 6000, 200, "normal"),
-    new Platform(150, 800, 160, 40, "normal"),
-    new Platform(800, 800, 140, 30, "normal"),
-    new Platform(500, 640, 140, 30, "broken"),
-    new Platform(1150, 620, 120, 30, "normal"),
-    new Platform(500, 400, 120, 30, "moving", 300, 2),
-    new Platform(1100, 280, 120, 40, "bouncy"),
-    new Platform(500, 160, 140, 100, "fake"),
-    new Platform(800, 520, 180, 50, "fake"),
-    new Platform(1400, 740, 140, 30, "broken"),
-    new Platform(1450, 440, 130, 30, "ice"),
-    new Platform(1580, 440, 140, 30, "fake"),
-    new Platform(1670, 240, 140, 30, "broken"),
-    new Platform(1350, 180, 100, 30, "fake"),
-    new Platform(1420, 180, 80, 30, "normal"),
-    new Platform(1100, 80, 220, 40, "oneWay"),
-];
+// [SỬA]: Đưa platforms và player ra ngoài để truy cập toàn cục, nhưng KHÔNG khởi tạo giá trị ngay
+let platforms = [];
+let player = null;
+let gameEngine = null;
 
-const player = new Player(50, canvas.height - 150, eventTracker);
-const gameEngine = new GameEngine(canvas, ctx, player, platforms, eventTracker, aiRuleEngine, uiManager, npcDialogSystem);
+async function loadMap() {
+    try {
+        const response = await fetch('./js/assets/map/mapdata.json'); 
+        const mapData = await response.json();
+        
+        console.log("Dữ liệu từ Tiled:", mapData);
 
+        // 1. Tìm đúng Layer có tên là 'CollisionLayer' (hoặc layer chứa các bục)
+        const objectLayer = mapData.layers.find(layer => 
+            layer.type === "objectgroup" && layer.name === "CollisionLayer"
+        );
+
+        if (!objectLayer || !objectLayer.objects) {
+            console.warn("⚠️ Không tìm thấy CollisionLayer, đang tìm Object Layer bất kỳ...");
+            // Backup: Nếu không tìm thấy tên chính xác, lấy layer object đầu tiên
+            const backupLayer = mapData.layers.find(layer => layer.type === "objectgroup");
+            if (!backupLayer) throw new Error("File JSON không có Object Layer nào!");
+        }
+
+        const targetLayer = objectLayer || mapData.layers.find(layer => layer.type === "objectgroup");
+
+        // 2. Chuyển đổi dữ liệu
+        platforms = targetLayer.objects.map(obj => {
+            // Lấy loại bục (Tiled gọi là Class hoặc Type)
+            let type = obj.class || obj.type || "normal"; 
+            
+            // Thông số mặc định
+            let speed = 2;   
+            let range = 200; 
+
+            // 3. Lấy Custom Properties (Cho bục Moving hoặc Slope nếu cần tùy chỉnh)
+            if (obj.properties) {
+                const speedProp = obj.properties.find(p => p.name === "speed");
+                const rangeProp = obj.properties.find(p => p.name === "range");
+                
+                if (speedProp) speed = speedProp.value;
+                if (rangeProp) range = rangeProp.value;
+            }
+
+            // 4. Khởi tạo Platform
+            // Lưu ý: Tiled dùng width/height, class Platform dùng w/h
+            if (type === "moving") {
+                return new Platform(obj.x, obj.y, obj.width, obj.height, type, range, speed);
+            } 
+            
+            // Các loại bục khác bao gồm slopeLeft, slopeRight, ice, bouncy...
+            return new Platform(obj.x, obj.y, obj.width, obj.height, type);
+        });
+
+        console.log(`✅ Đã nạp thành công ${platforms.length} bục từ CollisionLayer!`);
+    } catch (e) {
+        console.error("❌ Lỗi nạp Map:", e); 
+        // Platform dự phòng cực to dưới chân để tránh rơi vô tận khi lỗi map
+        platforms = [new Platform(-2000, 4300, 10000, 200, "normal")];
+    }
+}
 // ===== AI Call Logic Helper (AI team) =====
 const gameAI = {
     apiKey: null,
@@ -116,14 +155,26 @@ const gameAI = {
 window.gameAI = gameAI;
 
 // ===== Load: start game when ready (modal ẩn, vào trang chơi luôn) =====
-function initGameWhenReady() {
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(startGame));
-    } else {
-        requestAnimationFrame(startGame);
-    }
+// [SỬA]: Hàm khởi tạo hệ thống
+async function initGameSystems() {
+    // 1. Chờ nạp Map xong
+    await loadMap();
+
+    // 2. Sau khi có platforms mới tạo Player và Engine
+    player = new Player(1550, 4320 - 150, eventTracker);
+    gameEngine = new GameEngine(canvas, ctx, player, platforms, eventTracker, aiRuleEngine, uiManager);
+
+    // 3. Mở Modal cấu hình
+    initGameWhenReady();
 }
-initGameWhenReady();
+
+// Chạy khởi tạo
+initGameSystems();
+
+// [SỬA]: Không tự động chạy startGame ngay lập tức, hãy để người dùng bấm nút
+function initGameWhenReady() {
+    modal.classList.remove('hidden'); // Hiện modal API lúc đầu
+}
 
 let gameStarted = true;
 
@@ -184,11 +235,18 @@ function showStatus(message, type) {
 }
 
 function startGame() {
+    // SỬA: Thêm kiểm tra nếu gameEngine chưa sẵn sàng (do load map chậm hoặc lỗi) thì không start được, tránh lỗi
+    if (!gameEngine) {
+        alert("Game chưa sẵn sàng, vui lòng đợi giây lát!");
+        return;
+    }
     gameStarted = true;
     modal.classList.add('hidden');
     gameContainer.classList.remove('hidden');
     modalFooterStart.classList.add('hidden');
     modalFooterSettings.classList.remove('hidden');
+    // Đảm bảo Camera nhìn đúng chỗ khi bắt đầu
+    gameEngine.camera.reset(player.x - 960, player.y - 540);
 
     if (gameAI.hasValidCredentials()) {
         aiMessageGenerator.setAPIEndpoint(gameAI.endpoint, gameAI.apiKey, gameAI.model);

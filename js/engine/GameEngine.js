@@ -1,3 +1,5 @@
+import { Camera } from '../systems/Camera.js';
+
 export class GameEngine {
     constructor(canvas, ctx, player, platforms, eventTracker, aiRuleEngine, uiManager, npcDialogSystem = null) {
         this.canvas = canvas;
@@ -11,6 +13,15 @@ export class GameEngine {
         this.fixedDeltaTime = 1000 / 60; // Luôn tính vật lý ở 60 FPS
         this.accumulator = 0;
         this.lastTime = performance.now();
+        
+        // Map dimensions
+        this.mapWidth = 1920;
+        this.mapHeight = 4320;
+        this.viewportWidth = 1920;
+        this.viewportHeight = 1080;
+        
+        // Camera system
+        this.camera = new Camera(this.mapWidth, this.mapHeight, this.viewportWidth, this.viewportHeight);
         
         // Quản lý Input
         this.input = {
@@ -81,7 +92,10 @@ export class GameEngine {
         this.platforms.forEach(platform => platform.update(this.player));
 
         // Update người chơi
-        this.player.update(this.input, this.platforms, 1920, 1080);
+        this.player.update(this.input, this.platforms, this.mapWidth, this.mapHeight);
+
+        // Update camera to follow player
+        this.camera.update(this.player);
 
         // Update AI (để hiển thị thông báo nếu có)
         this.aiRuleEngine.update(); 
@@ -89,16 +103,20 @@ export class GameEngine {
 
     draw() {
         // Xóa màn hình
-        this.ctx.clearRect(0, 0, 1920, 1080);
+        this.ctx.clearRect(0, 0, this.viewportWidth, this.viewportHeight);
 
         // Vẽ nền (tùy chọn)
         // this.ctx.fillStyle = "#222";
-        // this.ctx.fillRect(0, 0, 1920, 1080);
+        // this.ctx.fillRect(0, 0, this.viewportWidth, this.viewportHeight);
 
-        // Vẽ sàn
-        this.platforms.forEach(platform => platform.draw(this.ctx));
+        // Vẽ sàn (chỉ những sàn hiện ra trên màn hình)
+        this.platforms.forEach(platform => {
+            if (this.camera.isVisible(platform.x, platform.y, platform.w, platform.h)) {
+                platform.draw(this.ctx, this.camera);
+            }
+        });
 
         // Vẽ người chơi
-        this.player.draw(this.ctx);
+        this.player.draw(this.ctx, this.camera);
     }
 }

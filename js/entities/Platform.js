@@ -77,9 +77,12 @@ export class Platform {
         }
     }
 
-    draw(ctx) {
+    draw(ctx, camera) {
         // Nếu bục đã vỡ (isBroken = true) thì không vẽ gì cả
         if (this.isBroken) return; 
+
+        // Get screen position from world position
+        const screenPos = camera.worldToScreen(this.x, this.y);
 
         // Chọn màu sắc
         switch (this.type) {
@@ -98,14 +101,44 @@ export class Platform {
                 
             case "oneWay": ctx.fillStyle = "#2ECC71"; break;
             case "fake": ctx.fillStyle = "#3f10b6"; break; 
+            // Màu cho bục nghiêng (Sử dụng màu tím đậm hoặc đỏ để cảnh báo độ nguy hiểm)
+            case "slopeLeft": 
+            case "slopeRight": ctx.fillStyle = "#E67E22"; break;
             default: ctx.fillStyle = "#4A2C2A"; 
         }
+        // --- LOGIC VẼ HÌNH DÁNG ---
+    if (this.type === "slopeLeft") {
+        // Dốc nghiêng trái: Cao bên trái, thấp bên phải (\) -> trượt sang phải
+        ctx.beginPath();
+        ctx.moveTo(screenPos.screenX, screenPos.screenY); // Góc trên trái
+        ctx.lineTo(screenPos.screenX + this.w, screenPos.screenY + this.h); // Góc dưới phải
+        ctx.lineTo(screenPos.screenX, screenPos.screenY + this.h); // Góc dưới trái
+        ctx.closePath();
+        ctx.fill();
+        
+        // Vẽ viền cho dốc
+        ctx.strokeStyle = "rgba(255,255,255,0.5)";
+        ctx.stroke();
 
+    } else if (this.type === "slopeRight") {
+        // Dốc nghiêng phải: Cao bên phải, thấp bên trái (/) -> trượt sang trái
+        ctx.beginPath();
+        ctx.moveTo(screenPos.screenX + this.w, screenPos.screenY); // Góc trên phải
+        ctx.lineTo(screenPos.screenX + this.w, screenPos.screenY + this.h); // Góc dưới phải
+        ctx.lineTo(screenPos.screenX, screenPos.screenY + this.h); // Góc dưới trái
+        ctx.closePath();
+        ctx.fill();
+
+        // Vẽ viền cho dốc
+        ctx.strokeStyle = "rgba(255,255,255,0.5)";
+        ctx.stroke();
+    }else{
         // Vẽ hình khối
-        ctx.fillRect(this.x, this.y, this.w, this.h);
+        ctx.fillRect(screenPos.screenX, screenPos.screenY, this.w, this.h);
         
         // Vẽ viền
         ctx.strokeStyle = "rgba(255,255,255,0.5)";
-        ctx.strokeRect(this.x, this.y, this.w, this.h);
+        ctx.strokeRect(screenPos.screenX, screenPos.screenY, this.w, this.h);
+        }
     }
 }

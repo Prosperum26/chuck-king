@@ -1,18 +1,18 @@
 const PHYSICS = {
     // 1. TRỌNG LỰC & RƠI 
-    gravity: 1.0,      //0.6    
-    fallMultiplier: 1.6,   //1.35
-    maxFallSpeed: 30,     //25
+    gravity: 1.0,       
+    fallMultiplier: 1.6,   
+    maxFallSpeed: 30,     
 
     // 2. DI CHUYỂN (Chạy nhanh)
-    accel: 1.5,          //0.8
-    maxSpeed: 12,         //8
-    friction: 0.82,        //0.85
+    accel: 1.5,          
+    maxSpeed: 12,         
+    friction: 0.82,       
     
     // 3. NHẢY (Phải tăng theo trọng lực)
-    jumpChargeSpeed: 2.5,  //0.8
-    maxJumpForce: 28,      //22
-    minJumpForce: 12,     //8
+    jumpChargeSpeed: 2.5,  
+    maxJumpForce: 28,      
+    minJumpForce: 12,     
     
     iceFriction: 0.98,
     airResistance: 0.99,
@@ -25,15 +25,51 @@ export class Player {
         this.startY = y;
         this.x = x;
         this.y = y;
-        this.w = 50;
-        this.h = 50;
+        this.w = 30;
+        this.h = 30;
         this.vx = 0;
         this.vy = 0;
         this.isGrounded = false;
         this.charge = 0;
         this.platformType = "air";
         this.facingRight = true;
-        this.eventTracker = eventTracker; // Để báo cho AI
+        this.eventTracker = eventTracker; 
+
+        // ==========================================
+        // CẤU HÌNH ANIMATION
+        // ==========================================
+        this.runImage = new Image();
+        this.runImage.src = '../../Assets/player_assets/Run (32x32).png'; 
+
+        this.idleImage = new Image();
+        this.idleImage.src = '../../Assets/player_assets/Idle (32x32).png'; 
+
+        this.jumpImage = new Image();
+        this.jumpImage.src = '../../Assets/player_assets/Jump (32x32).png'; 
+
+        this.fallImage = new Image();
+        this.fallImage.src = '../../Assets/player_assets/Fall (32x32).png'; 
+        
+        this.appearingImage = new Image();
+        this.appearingImage.src = '../../Assets/player_assets/Appearing (96x96).png'; 
+
+        this.disappearingImage = new Image();
+        this.disappearingImage.src = '../../Assets/player_assets/Desappearing (96x96).png'; // Lưu ý đúng tên file của bạn
+        
+        this.frameX = 0;           
+        this.maxRunFrames = 12;    
+        this.maxIdleFrames = 11;   
+        this.maxJumpFrames = 1;    
+        this.maxFallFrames = 1;    
+        this.maxAppearingFrames = 7; 
+        this.maxDisappearingFrames = 7; // Thêm số frame cho Disappearing
+        
+        this.fps = 16;             
+        this.frameInterval = 1000 / this.fps; 
+        this.frameTimer = 0;       
+        
+        this.currentState = 'appearing'; 
+        // ==========================================
     }
 
     reset() {
@@ -42,12 +78,28 @@ export class Player {
         this.vx = 0;
         this.vy = 0;
         this.charge = 0;
-        // Báo cho AI biết là người chơi vừa chết
-        if (this.eventTracker) this.eventTracker.track('death');
+        
+        // Reset lại animation appearing khi hồi sinh
+        this.currentState = 'appearing';
+        this.frameX = 0;
+        this.frameTimer = 0;
+        this.facingRight = true;
+    }
+
+    // GỌI HÀM NÀY KHI NHÂN VẬT CHẾT (Đụng quái, đụng gai...)
+    die() {
+        if (this.currentState !== 'disappearing') {
+            this.currentState = 'disappearing';
+            this.frameX = 0;
+            this.frameTimer = 0;
+            this.vx = 0;
+            this.vy = 0; // Đứng yên tại chỗ khi chết
+            if (this.eventTracker) this.eventTracker.track('death');
+        }
     }
 
     jump() {
-        if (!this.isGrounded) return;
+        if (!this.isGrounded || this.currentState === 'appearing' || this.currentState === 'disappearing') return;
         
         const force = Math.max(this.charge, PHYSICS.minJumpForce);
         this.vy = -force;
@@ -59,62 +111,75 @@ export class Player {
         if (this.eventTracker) this.eventTracker.track('jump');
     }
 
-    update(input, platforms, canvasWidth, canvasHeight) {
-        // logic mới: nếu đang đứng trên bục di chuyển thì nhân vật cũng sẽ bị ảnh hưởng theo vận tốc của bục đó
+    update(input, platforms, canvasWidth, canvasHeight, deltaTime = 16) {
+        // NẾU ĐANG CHẾT, ĐÓNG BĂNG VẬT LÝ VÀ CHỈ CHẠY ANIMATION
+        if (this.currentState === 'disappearing') {
+            this.updateAnimationOnly(deltaTime);
+            return; 
+        }
+
         if (this.isGrounded && this.standingOnPlatform && this.platformType === "moving") {
-        // Chúng ta phải nhân cả speed và direction để biết bục đang tiến hay lùi
-        const platformMovement = this.standingOnPlatform.speed * this.standingOnPlatform.direction;
-        this.x += platformMovement;
+            const platformMovement = this.standingOnPlatform.speed * this.standingOnPlatform.direction;
+            this.x += platformMovement;
         }
         
-        // 1. Logic di chuyển (Gia tốc)
-        let accel = PHYSICS.accel;
-        if (this.platformType === "ice") accel *= 0.1; // giảm gia tốc trên băng
+        // KHÓA DI CHUYỂN NẾU ĐANG TRONG TRẠNG THÁI "APPEARING"
+        if (this.currentState !== 'appearing'&& this.platformType !== "slopeLeft" && this.platformType !== "slopeRight") {
+            let accel = PHYSICS.accel;
+            if (this.platformType === "ice") accel *= 0.1; 
 
-        if (this.isGrounded) {
-            if (input.keys["ArrowLeft"] || input.keys["KeyA"]) {
-                this.vx -= accel;
-                this.facingRight = false;
+            if (this.isGrounded) {
+                if (input.keys["ArrowLeft"] || input.keys["KeyA"]) {
+                    this.vx -= accel;
+                    this.facingRight = false;
+                }
+                if (input.keys["ArrowRight"] || input.keys["KeyD"]) {
+                    this.vx += accel;
+                    this.facingRight = true;
+                }
             }
-            if (input.keys["ArrowRight"] || input.keys["KeyD"]) {
-                this.vx += accel;
-                this.facingRight = true;
+
+            if (input.keys["Space"] && this.isGrounded) {
+                this.charge = Math.min(this.charge + PHYSICS.jumpChargeSpeed, PHYSICS.maxJumpForce);
+            }
+        } else {
+            // KHI ĐANG TRÊN DỐC HOẶC ĐANG XUẤT HIỆN:
+            // Không cho gồng nhảy
+            this.charge = 0; 
+            
+            // Nếu là đang trượt dốc, ta KHÔNG nên nhân vx với 0.5 
+            // vì nó sẽ làm cản trở cái lực trượt 12px mà ta đã thiết lập ở dưới.
+            if (this.currentState === 'appearing') {
+                this.vx *= 0.5;
             }
         }
 
-        // 2. Logic sạc lực nhảy (Input)
-        if (input.keys["Space"] && this.isGrounded) {
-            this.charge = Math.min(this.charge + PHYSICS.jumpChargeSpeed, PHYSICS.maxJumpForce);
-        }
-
-        // 3. Vật lý (Ma sát & Tốc độ tối đa)
+        // Vật lý cơ bản
         if (this.vx > PHYSICS.maxSpeed) this.vx = PHYSICS.maxSpeed;
         if (this.vx < -PHYSICS.maxSpeed) this.vx = -PHYSICS.maxSpeed;
 
         let friction = PHYSICS.friction;
         if (!this.isGrounded) friction = PHYSICS.airResistance;
         else if (this.platformType === "ice") friction = PHYSICS.iceFriction;
-        // bỏ cái nhảy thì ma sát giảm đi vì nó gây ra nhiều xung đột
 
         this.vx *= friction;
 
-        // 4. Trọng lực
         if (this.vy < 0) this.vy += PHYSICS.gravity;
         else this.vy += PHYSICS.gravity * PHYSICS.fallMultiplier;
         this.vy = Math.min(this.vy, PHYSICS.maxFallSpeed);
 
-        // =========================================================
-        // XỬ LÝ VA CHẠM (Tách X và Y để không xuyên tường)
-        // =========================================================
-
-        // --- BƯỚC 1: Xử lý trục NGANG (X) ---
+        // Va chạm Trục X
         this.x += this.vx;
-
         platforms.forEach(p => {
-            if ((p.type === "broken" && p.isBroken) || p.type === "fake" || p.type === "oneWay") return;
+            if (
+                (p.type === "broken" && p.isBroken) || 
+                p.type === "fake" || 
+                p.type === "oneWay" || 
+                p.type === "slopeLeft" || 
+                p.type === "slopeRight"
+            ) return;
             
             if (this.checkCollision(p)) {
-                // 1. Xác định hướng đẩy dựa trên vị trí tương đối (Chống xuyên tường)
                 const playerCenter = this.x + this.w / 2;
                 const platformCenter = p.x + p.w / 2;
 
@@ -124,32 +189,45 @@ export class Player {
                     this.x = p.x + p.w;
                 }
 
-                // 2. Tính toán lại độ nảy (Tính năng bật ra)
-                // Nếu bục đang di chuyển, ta cộng thêm vận tốc của bục vào lực nảy
                 let platformVel = (p.type === "moving") ? p.speed * p.direction : 0;
-                
-                // Đảo ngược vận tốc và giảm chấn (0.4)
-                // Chúng ta lấy (vận tốc cũ - vận tốc bục) để tính lực bật thực tế
                 this.vx = (platformVel - this.vx) * 0.4;
 
-                // Nếu lực bật quá nhỏ, hãy cho nó một cái "huých" tối thiểu để không bị dính
                 if (Math.abs(this.vx) < 1) {
                     this.vx = (playerCenter < platformCenter) ? -2 : 2;
                 }
             }
         });
 
-        // --- BƯỚC 2: Xử lý trục DỌC (Y) ---
+        // Va chạm Trục Y
         this.y += this.vy;
-        let foundGround = false; // Biến để kiểm tra xem có chạm đất không
+        let foundGround = false; 
 
         platforms.forEach(p => {
-            if ((p.type === "broken" && p.isBroken) || p.type === "fake") return; // BỎ QUA va chạm nếu bục đã vỡ hoặc là bục giả
+            if ((p.type === "broken" && p.isBroken) || p.type === "fake") return; 
             if (this.checkCollision(p)) {
-                // Nếu là bục một chiều
+                // --- XỬ LÝ RIÊNG CHO BỤC NGHIÊNG ---
+                if (p.type === "slopeLeft" || p.type === "slopeRight") {
+                    let relativeX = (this.x + this.w / 2) - p.x;
+                    let slopeY;
+
+                    if (p.type === "slopeLeft") {
+                        slopeY = p.y + (relativeX / p.w) * p.h;
+                        this.vx = 12; // ÉP TRƯỢT PHẢI
+                    } else {
+                        slopeY = p.y + (1 - relativeX / p.w) * p.h;
+                        this.vx = -12; // ÉP TRƯỢT TRÁI
+                    }
+
+                    // Ép chân nhân vật nằm đúng trên mặt dốc
+                    this.y = slopeY - this.h;
+                    this.vy = 5; // Luôn có lực ghì xuống để không bị bay khỏi dốc
+                    this.isGrounded = true;
+                    this.platformType = p.type;
+                    this.standingOnPlatform = p;
+                    foundGround = true;
+                    return; // Thoát vòng lặp cho bục này
+                }
                 if (p.type === "oneWay") {
-                    // Chỉ va chạm nếu đang rơi VÀ chân đang ở trên mặt bục
-                    // (Thêm sai số 10px để tránh bị "giật" khi rơi quá nhanh)
                     if (this.vy > 0 && (this.y + this.h - this.vy) <= p.y + 5) {
                         this.y = p.y - this.h;
                         this.vy = 0;
@@ -158,14 +236,12 @@ export class Player {
                         this.platformType = p.type;
                         foundGround = true;
                     }
-                    // Nếu đang đi lên (vy < 0), không làm gì cả (đi xuyên qua)
                 }
                 else {
-                    // A. Rơi xuống sàn
                     if (this.vy > 0) {
                         this.y = p.y - this.h;
                         this.vy = 0;
-                        foundGround = true; // Đã tìm thấy đất
+                        foundGround = true; 
                         this.isGrounded = true;
                         this.platformType = p.type;
                         this.standingOnPlatform = p;
@@ -178,36 +254,84 @@ export class Player {
                             }
                         }
                     } 
-                    // B. Cụng đầu
                     else if (this.vy < 0) {
                         this.y = p.y + p.h;
                         this.vy = 0;
                     }
                 }
             }
-            
         });
-        // Nếu chạy hết danh sách bục mà không chạm cái nào
+
         if (!foundGround) {
             this.isGrounded = false;
             this.standingOnPlatform = null;
             this.platformType = "air";
         }
-        // 1. Chặn mép trái (Không cho x nhỏ hơn 0)
-    if (this.x < 0) {
-        this.x = 0;
-        this.vx = 0; // Đâm vào tường thì dừng vận tốc
-    }
+        
+        if (this.x < 0) {
+            this.x = 0;
+            this.vx = 0; 
+        }
+        if (this.x + this.w > canvasWidth) {
+            this.x = canvasWidth - this.w;
+            this.vx = 0;
+        }
 
-    // 2. Chặn mép phải (Không cho x lớn hơn chiều rộng màn hình)
-    if (this.x + this.w > canvasWidth) {
-        this.x = canvasWidth - this.w;
-        this.vx = 0;
-    }
-
-        // Chết khi rơi xuống vực
+        // Rớt hố thì gọi hàm die() thay vì reset ngay lập tức
         if (this.y > canvasHeight) {
-            this.reset();
+            this.die();
+        }
+
+        // Cập nhật Animation cho các trạng thái bình thường
+        this.updateAnimationOnly(deltaTime);
+    }
+
+    // Tách riêng logic xử lý khung hình để gọi lại cho gọn
+    updateAnimationOnly(deltaTime) {
+        let nextState = this.currentState;
+        
+        if (this.currentState !== 'appearing' && this.currentState !== 'disappearing') {
+            if (!this.isGrounded) {
+                if (this.vy < 0) nextState = 'jump';
+                else nextState = 'fall';
+            } 
+            else if (Math.abs(this.vx) > 0.5) {
+                nextState = 'run';
+            } else {
+                nextState = 'idle';
+            }
+        }
+
+        if (this.currentState !== nextState) {
+            this.currentState = nextState;
+            this.frameX = 0;
+            this.frameTimer = 0;
+        }
+
+        this.frameTimer += deltaTime;
+        if (this.frameTimer > this.frameInterval) {
+            this.frameX++;
+            
+            let maxFrames = 1;
+            if (this.currentState === 'run') maxFrames = this.maxRunFrames;
+            else if (this.currentState === 'idle') maxFrames = this.maxIdleFrames;
+            else if (this.currentState === 'jump') maxFrames = this.maxJumpFrames;
+            else if (this.currentState === 'fall') maxFrames = this.maxFallFrames;
+            else if (this.currentState === 'appearing') maxFrames = this.maxAppearingFrames;
+            else if (this.currentState === 'disappearing') maxFrames = this.maxDisappearingFrames;
+            
+            if (this.frameX >= maxFrames) {
+                if (this.currentState === 'appearing') {
+                    this.currentState = 'idle';
+                    this.frameX = 0;
+                } else if (this.currentState === 'disappearing') {
+                    // Nếu chạy xong hiệu ứng chết, reset lại nhân vật (sẽ tự động thành appearing)
+                    this.reset(); 
+                } else {
+                    this.frameX = 0;
+                }
+            }
+            this.frameTimer = 0;
         }
     }
 
@@ -218,27 +342,100 @@ export class Player {
             this.y + this.h > p.y &&
             this.y < p.y + p.h
         );
+        if (isInsideBox && (p.type === "slopeLeft" || p.type === "slopeRight")) {
+        // Tính toán chiều cao của dốc tại vị trí X của nhân vật
+        let relativeX = (this.x + this.w / 2) - p.x;
+        let slopeY;
+
+        if (p.type === "slopeLeft") {
+            // Dốc xuống bên phải (\): y tăng dần theo x
+            slopeY = p.y + (relativeX / p.w) * p.h;
+        } else {
+            // Dốc xuống bên trái (/): y giảm dần theo x
+            slopeY = p.y + (1 - relativeX / p.w) * p.h;
+        }
+
+        // Chỉ coi là va chạm nếu chân nhân vật (this.y + this.h) vượt quá mặt dốc
+        return (this.y + this.h > slopeY);
     }
 
-    draw(ctx) {
-        // Vẽ nhân vật
-        ctx.fillStyle = "#ff4444";
-        ctx.fillRect(this.x, this.y, this.w, this.h);
+    return isInsideBox;
+    }
 
-        // Vẽ mắt
-        ctx.fillStyle = "white";
-        let eyeX = this.facingRight ? this.x + 38 : this.x + 4;
-        ctx.fillRect(eyeX, this.y + 5, 8, 8);
+    draw(ctx, camera) {
+        // 1. TÍNH TOÁN VỊ TRÍ THEO CAMERA (Điểm mấu chốt để sửa lỗi)
+        let screenX = this.x;
+        let screenY = this.y;
+        
+        // Cập nhật tọa độ hiển thị nếu có camera
+        if (camera && typeof camera.worldToScreen === 'function') {
+            const screenPos = camera.worldToScreen(this.x, this.y);
+            screenX = screenPos.screenX;
+            screenY = screenPos.screenY;
+        }
 
-        // Vẽ thanh lực nhảy
-        if (this.charge > 0) {
+        // 2. CHUẨN BỊ ẢNH THEO TRẠNG THÁI
+        let currentImage;
+        let sWidth = 32;   
+        let sHeight = 32;  
+        let dWidth = this.w; 
+        let dHeight = this.h;
+        let drawOffsetX = 0; 
+        let drawOffsetY = 0;
+
+        if (this.currentState === 'run') currentImage = this.runImage;
+        else if (this.currentState === 'jump') currentImage = this.jumpImage;
+        else if (this.currentState === 'fall') currentImage = this.fallImage;
+        else if (this.currentState === 'appearing' || this.currentState === 'disappearing') {
+            currentImage = this.currentState === 'appearing' ? this.appearingImage : this.disappearingImage;
+            sWidth = 96;  
+            sHeight = 96; 
+            dWidth = this.w * 3;  
+            dHeight = this.h * 3; 
+            drawOffsetX = -(dWidth - this.w) / 2;
+            drawOffsetY = -(dHeight - this.h) / 2;
+        }
+        else currentImage = this.idleImage;
+
+        // 3. VẼ HÌNH ẢNH NHÂN VẬT LÊN MÀN HÌNH
+        if (currentImage && currentImage.complete && currentImage.naturalWidth !== 0) {
+            ctx.save();
+            
+            // Lật ảnh nếu quay trái (Và không ở trạng thái xuất hiện/biến mất)
+            if (!this.facingRight && this.currentState !== 'appearing' && this.currentState !== 'disappearing') {
+                // Tịnh tiến tới cạnh phải của nhân vật TRÊN MÀN HÌNH (Dùng screenX)
+                ctx.translate(screenX + this.w, screenY); 
+                ctx.scale(-1, 1); 
+                
+                ctx.drawImage(
+                    currentImage, 
+                    this.frameX * sWidth, 0, sWidth, sHeight, 
+                    0, 0, dWidth, dHeight  
+                );
+            } else {
+                // Vẽ bình thường với độ lệch (Offset)
+                ctx.drawImage(
+                    currentImage, 
+                    this.frameX * sWidth, 0, sWidth, sHeight, 
+                    screenX + drawOffsetX, screenY + drawOffsetY, dWidth, dHeight
+                );
+            }
+            ctx.restore();
+        } else {
+            // BACKUP: Hiển thị cục vuông đỏ nếu đường dẫn ảnh bị sai hoặc chưa load kịp
+            ctx.fillStyle = "#ff4444";
+            ctx.fillRect(screenX, screenY, this.w, this.h);
+        }
+
+        // 4. VẼ THANH LỰC NHẢY (Không vẽ lúc đang dùng Animation Appear/Disappear)
+        if (this.charge > 0 && this.currentState !== 'appearing' && this.currentState !== 'disappearing') {
             ctx.fillStyle = "lime";
             ctx.beginPath();
-            ctx.arc(this.x + 15, this.y - 15, 5, 0, Math.PI * 2);
+            ctx.arc(screenX + 15, screenY - 15, 5, 0, Math.PI * 2);
             ctx.fill();
             
             ctx.fillStyle = "yellow";
-            ctx.fillRect(this.x - 5, this.y - 10, (this.charge / PHYSICS.maxJumpForce) * 40, 5);
+            ctx.fillRect(screenX - 5, screenY - 10, (this.charge / PHYSICS.maxJumpForce) * 40, 5);
         }
     }
 }
