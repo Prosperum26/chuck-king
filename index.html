@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chuck King - Start</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/menu.css">
+</head>
+<body>
+
+    <div class="game-container">
+
+        <div id="main-menu" class="menu-box">
+            <button class="pixel-btn" onclick="openScreen('start-screen')">START</button>
+            <br>
+            <button class="pixel-btn" onclick="openScreen('about-screen')">ABOUT US</button>
+            <br>
+            <button class="pixel-btn" onclick="openScreen('story-screen')">SETTING</button>
+        </div>
+
+        <div id="start-screen" class="screen-overlay">
+            <div class="screen-content">
+                <pre>
+
+
+                </pre>
+                <h2>Please insert your name!</h2>
+                <input type="text" id="playerName" placeholder="">
+                <div class="btn-group">
+                    <br>
+                    <button class="pixel-btn" onclick="startGame()">GET READY!</button>
+                    <pre>
+
+                    </pre>
+                    <button class="pixel-btn" onclick="closeScreen('start-screen')">BACK</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="about-screen" class="screen-overlay">
+            <div class="screen-content">
+                <h2>ABOUT US</h2>
+                <p> 
+                    WE DIDN'T UPDATE!
+                    
+                </p>
+                <br> <br>
+                <button class="pixel-btn" onclick="closeScreen('about-screen')">BACK</button>
+            </div>
+        </div>
+
+        <div id="story-screen" class="screen-overlay">
+            <div class="screen-content">
+                <h2>SETTING</h2>
+                <p>
+                    WE DID NOT UPDATE!
+                </p>
+                <br> <br>
+                <button class="pixel-btn" onclick="closeScreen('story-screen')">BACK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openScreen(screenId) {
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function closeScreen(screenId) {
+            document.getElementById(screenId).classList.remove('active');
+        }
+
+        function startGame() {
+            var name = document.getElementById('playerName').value;
+
+            if (name.trim() === "") {
+                alert("PLEASE INSERT YOUR NAME!");
+            } else {
+                localStorage.setItem('playerName', name);
+                window.location.href = 'game.html';
+            }
+        }
+    </script>
+</body>
+</html>
