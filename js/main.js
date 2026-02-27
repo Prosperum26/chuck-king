@@ -160,9 +160,18 @@ async function initGameSystems() {
     // 1. Chờ nạp Map xong
     await loadMap();
 
-    // 2. Sau khi có platforms mới tạo Player và Engine
-    player = new Player(1550, 4320 - 150, eventTracker);
-    gameEngine = new GameEngine(canvas, ctx, player, platforms, eventTracker, aiRuleEngine, uiManager);
+        // 2. Sau khi có platforms mới tạo Player và Engine (kèm NPCDialogSystem để chạy typing + auto-close)
+        player = new Player(1550, 4320 - 150, eventTracker);
+        gameEngine = new GameEngine(
+            canvas,
+            ctx,
+            player,
+            platforms,
+            eventTracker,
+            aiRuleEngine,
+            uiManager,
+            npcDialogSystem
+        );
 
     // 3. Mở Modal cấu hình
     initGameWhenReady();

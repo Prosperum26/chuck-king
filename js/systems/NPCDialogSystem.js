@@ -13,7 +13,8 @@ export class NPCDialogSystem {
         this.closeBtn = null;
         this.isDialogOpen = false;
         this.autoCloseTimer = 0;
-        this.dialogDuration = 5;
+        // Thời gian chờ sau khi gõ xong toàn bộ chữ trước khi ẩn (giây)
+        this.dialogDuration = 3;
         this.fullText = '';
         this.charIndex = 0;
         this.typingSpeed = 40; // chars per second
