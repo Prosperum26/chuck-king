@@ -23,10 +23,14 @@ export class Platform {
         this.image = new Image();
 
         if (this.type === "broken") {
-            // Wood 2: Bục thoắt ẩn thoắt hiện
+            // Wood 2: Bục vỡ sau khi chạm
             this.image.src = "../assets/wood2.png";
-            this.lastToggle = Date.now();
-            this.toggleInterval = 2000; // Thay đổi mili-giây ở đây (2000 = 2 giây biến mất/hiện)
+            
+            // --- Logic mới thay thế cho bục broken ---
+            this.isTriggered = false;  // Trạng thái: true là đã bắt đầu đếm ngược
+            this.breakTimer = 0;       // Đếm ngược thời gian để vỡ
+            this.respawnTimer = 0;     // Đếm ngược thời gian để hồi phục
+            
         } else {
             // Wood 1 và 3: Random cho các bục fake và real
             // Lấy ngẫu nhiên tỷ lệ 50-50
@@ -35,7 +39,7 @@ export class Platform {
         }
     }
 
-    update(deltaTime) {
+    update(deltaTime, player) { 
         // 1. Logic cho bục di chuyển
         if (this.type === "moving") {
             this.x += this.speed * this.direction;
@@ -50,12 +54,47 @@ export class Platform {
             }
         }
 
-        // 2. Logic cho bục wood 2 (broken) biến mất và xuất hiện lại sau 1 thời gian
+        // 2. Logic cho bục wood 2 (broken)
         if (this.type === "broken") {
-            const now = Date.now();
-            if (now - this.lastToggle > this.toggleInterval) {
-                this.isBroken = !this.isBroken; // Đảo trạng thái (tàng hình <-> hiện)
-                this.lastToggle = now;
+            // Giai đoạn 1: BỤC ĐANG TỒN TẠI
+            if (!this.isBroken) {
+                // A. Kích hoạt đếm ngược nếu Player chạm vào lần đầu
+                if (!this.isTriggered && player && player.standingOnPlatform === this) {
+                    this.isTriggered = true;
+                }
+
+                // B. Nếu đã kích hoạt -> Tự động đếm ngược (kể cả Player đã nhảy đi)
+                if (this.isTriggered) {
+                    this.breakTimer++;
+
+                    // Sau 1.5 giây (90 frames) -> VỠ
+                    if (this.breakTimer >= 90) {
+                        this.isBroken = true;
+                        this.isTriggered = false; // Tắt kích hoạt để chờ lần hồi phục sau
+                        this.breakTimer = 0;      // Reset bộ đếm
+
+                        // NẾU Player vẫn còn đang đứng trên bục lúc nó vỡ -> Cho rơi xuống
+                        if (player && player.standingOnPlatform === this) {
+                            player.isGrounded = false;
+                            player.standingOnPlatform = null;
+                            player.platformType = "air";
+                            player.y += 2; // Đẩy nhẹ xuống để tách khỏi hitbox
+                        }
+                    }
+                }
+            } 
+            // Giai đoạn 2: BỤC ĐÃ VỠ (Đang tàng hình)
+            else {
+                this.respawnTimer++;
+                
+                // Sau 1 giây (60 frames) -> HỒI PHỤC
+                if (this.respawnTimer >= 60) {
+                    this.isBroken = false;
+                    this.respawnTimer = 0;
+                    // Reset sạch sẽ các trạng thái để đón lượt nhảy mới
+                    this.breakTimer = 0;
+                    this.isTriggered = false;
+                }
             }
         }
     }

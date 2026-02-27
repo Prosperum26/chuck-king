@@ -30,15 +30,18 @@ export class Player {
         this.charge = 0;
         this.platformType = "air";
         this.facingRight = true;
-        this.eventTracker = eventTracker; 
+        this.eventTracker = eventTracker;
+        
+        // Track walk state to prevent event spam
+        this.isWalking = false;
+        this.lastWalkDirection = null; 
 
         this.isLanding = false; 
         this.fallStunTimer = 0; // Biến đếm thời gian nằm bẹp
         this.peakY = y;         
 
-        // ==========================================
+
         // CẤU HÌNH ANIMATION
-        // ==========================================
         this.runImage = new Image();
         this.runImage.src = '../../assets/Walk.png'; 
 
@@ -87,7 +90,11 @@ export class Player {
         this.facingRight = true;
         this.isLanding = false; 
         this.fallStunTimer = 0; // Reset cả thời gian ngã
-        this.peakY = this.startY; 
+        this.peakY = this.startY;
+        
+        // Reset walk state
+        this.isWalking = false;
+        this.lastWalkDirection = null;
     }
 
     die() {
@@ -130,9 +137,9 @@ export class Player {
         
         if (this.currentState !== 'appearing') {
             
-            // ==========================================
+
             // LOGIC NGẮT THỜI GIAN NGÃ BẰNG NÚT BẤM
-            // ==========================================
+
             if (this.isLanding) {
                 this.fallStunTimer -= deltaTime; // Trừ dần thời gian
                 
@@ -152,14 +159,35 @@ export class Player {
             if (this.platformType === "ice") accel *= 0.1; 
 
             if (this.isGrounded) {
+                let isMoving = false;
+                let moveDirection = null;
+                
                 if (input.keys["ArrowLeft"] || input.keys["KeyA"]) {
                     this.vx -= accel;
                     this.facingRight = false;
+                    isMoving = true;
+                    moveDirection = 'left';
                 }
                 if (input.keys["ArrowRight"] || input.keys["KeyD"]) {
                     this.vx += accel;
                     this.facingRight = true;
+                    isMoving = true;
+                    moveDirection = 'right';
                 }
+                
+                // Only trigger walk event when starting to move or changing direction
+                if (isMoving && (!this.isWalking || this.lastWalkDirection !== moveDirection)) {
+                    if (this.eventTracker) this.eventTracker.track('walk', { direction: moveDirection });
+                    this.isWalking = true;
+                    this.lastWalkDirection = moveDirection;
+                } else if (!isMoving && this.isWalking) {
+                    // Stop walking when not moving
+                    this.isWalking = false;
+                    this.lastWalkDirection = null;
+                }
+            } else {
+                // Not grounded - stop walk tracking
+                this.isWalking = false;
             }
 
             if (input.keys["Space"] && this.isGrounded) {
@@ -255,10 +283,7 @@ export class Player {
             this.platformType = "air";
         }
         
-        // ==========================================
         // KÍCH HOẠT HIỆU ỨNG NGÃ
-        // ==========================================
-
         if (!previousGrounded && this.isGrounded) {
             let fallDistance = this.y - this.peakY;
             let fallThreshold = canvasHeight / 2; 
@@ -270,7 +295,9 @@ export class Player {
                 
                 this.frameX = 4; // Nhảy thẳng đến frame đập mặt
                 this.frameTimer = 0;
-                this.vx = 0; 
+                this.vx = 0;
+                
+                if (this.eventTracker) this.eventTracker.track('land');
             }
             
             this.peakY = this.y; 
@@ -423,9 +450,7 @@ export class Player {
             ctx.fillRect(screenX, screenY, this.w, this.h);
         }
 
-        // ==========================================
         // VẼ THANH SẠC LỰC NHẢY (ĐÃ CĂN GIỮA THEO KÍCH THƯỚC MỚI)
-        // ==========================================
         if (this.charge > 0 && this.currentState !== 'appearing' && this.currentState !== 'disappearing') {
             // Tính điểm chính giữa của nhân vật
             let centerX = screenX + this.w / 2;

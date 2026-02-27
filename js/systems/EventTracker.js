@@ -10,6 +10,43 @@ export class EventTracker {
     this.lastIdleTriggerTime = 0;
     this.idleTriggerCooldown = 8000;
     this.fallCount = 0;
+    
+    // Event listener system for sound and other handlers
+    this.listeners = {};
+  }
+
+  /**
+   * Register event listener
+   * @param {string} eventType - Type of event to listen for
+   * @param {Function} callback - Callback function (receives event data)
+   */
+  on(eventType, callback) {
+    if (!this.listeners[eventType]) {
+      this.listeners[eventType] = [];
+    }
+    this.listeners[eventType].push(callback);
+  }
+
+  /**
+   * Unregister event listener
+   */
+  off(eventType, callback) {
+    if (!this.listeners[eventType]) return;
+    this.listeners[eventType] = this.listeners[eventType].filter(cb => cb !== callback);
+  }
+
+  /**
+   * Emit event to all listeners
+   */
+  emit(eventType, data) {
+    if (!this.listeners[eventType]) return;
+    this.listeners[eventType].forEach(callback => {
+      try {
+        callback(data);
+      } catch (e) {
+        console.error(`Error in event listener for '${eventType}':`, e);
+      }
+    });
   }
 
   update(dt, player) {
@@ -32,6 +69,9 @@ export class EventTracker {
     if (eventType === "jump" || eventType === "bounce") {
       this.onPlayerInput();
     }
+    
+    // Emit event to all listeners
+    this.emit(eventType, data);
   }
 
   onDeath(zoneId) {

@@ -1,3 +1,8 @@
+// ===== Global Error Handler =====
+window.addEventListener('error', (event) => {
+    console.error('❌ Error:', event.message);
+});
+
 import { GameEngine } from './engine/GameEngine.js';
 import { Player } from './entities/Player.js';
 import { Platform } from './entities/Platform.js';
@@ -7,6 +12,7 @@ import { AIMessageGenerator } from './systems/AIMessageGenerator.js';
 import { APIKeyManager } from './systems/APIKeyManager.js';
 import { AICallLogic } from './systems/AICallLogic.js';
 import { UIManager } from './ui/UIManager.js';
+import { SoundManager } from './systems/SoundManager.js';
 
 // ===== Initialize Modal Elements (AI/FE) =====
 const modal = document.getElementById('api-key-modal');
@@ -36,7 +42,7 @@ function setupCanvas() {
 setupCanvas();
 
 window.addEventListener('resize', () => {
-    console.log("Cửa sổ thay đổi, nhưng độ phân giải game vẫn là 1920x1080");
+    // Game resolution stays 1920x1080
 });
 
 // ===== Initialize Systems =====
@@ -45,6 +51,7 @@ const eventTracker = new EventTracker();
 const aiMessageGenerator = new AIMessageGenerator();
 const aiRuleEngine = new AIRuleEngine(aiMessageGenerator, eventTracker);
 const uiManager = new UIManager();
+const soundManager = new SoundManager();
 
 // ===== Platforms (Dev_Game map: moving, broken, bouncy, ice, oneWay, fake) =====
 const platforms = [
@@ -113,17 +120,17 @@ const gameAI = {
 };
 window.gameAI = gameAI;
 
-// ===== Load: start game when ready (modal ẩn, vào trang chơi luôn) =====
+// ===== Load: start game when ready =====
 function initGameWhenReady() {
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(startGame));
+        document.addEventListener('DOMContentLoaded', startGame);
     } else {
-        requestAnimationFrame(startGame);
+        setTimeout(startGame, 100);
     }
 }
 initGameWhenReady();
 
-let gameStarted = true;
+let gameStarted = false;
 
 // ===== Modal Event Handlers =====
 testApiBtn.addEventListener('click', async () => {
@@ -190,11 +197,9 @@ function startGame() {
 
     if (gameAI.hasValidCredentials()) {
         aiMessageGenerator.setAPIEndpoint(gameAI.endpoint, gameAI.apiKey, gameAI.model);
-        console.log('✅ AI API configured for taunt messages');
-    } else {
-        console.log('ℹ️ Using hardcoded AI messages (no API configured)');
     }
 
+    soundManager.playBackgroundMusic(currentScene);
     gameEngine.start();
 }
 
@@ -247,3 +252,36 @@ document.getElementById("mute-ai-btn").addEventListener("click", () => {
         btn.classList.remove("muted");
     }
 });
+
+// ===== Sound Manager Event Listeners =====
+// Track player's current scene for walking sounds
+let currentScene = 1;
+
+// Listen for game events and play appropriate sounds
+eventTracker.on('jump', () => {
+    soundManager.playJump();
+});
+
+eventTracker.on('land', () => {
+    soundManager.playFall();
+});
+
+eventTracker.on('walk', (data) => {
+    soundManager.playWalkSound(currentScene, data.direction);
+});
+
+eventTracker.on('bounce', () => {
+    soundManager.playJump();
+});
+
+eventTracker.on('conversation', () => {
+    soundManager.playConversation();
+});
+
+// Switch between scenes during gameplay
+window.switchScene = function(sceneNumber) {
+    currentScene = sceneNumber;
+    soundManager.playBackgroundMusic(sceneNumber);
+};
+
+

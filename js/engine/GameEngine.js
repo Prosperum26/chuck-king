@@ -80,8 +80,7 @@ export class GameEngine {
 
   update() {
     // Update các sàn di chuyển
-    this.platforms.forEach((platform) => platform.update(this.player));
-
+    this.platforms.forEach((platform) => platform.update(this.fixedDeltaTime, this.player));
     // Update người chơi
     this.player.update(this.input, this.platforms, 1920, 1080);
 

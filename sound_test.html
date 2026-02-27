@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Test - Menu Theme</title>
+</head>
+<body>
+    <h1>🎵 Sound Test - Menu Theme</h1>
+    <p>Click button để test âm thanh menu theme</p>
+
+    <button id="testBtn" style="font-size: 20px; padding: 10px;">🔊 Test Menu Theme</button>
+
+    <br><br>
+    <div id="status">Status: Ready</div>
+
+    <script>
+        console.log('🎵 Sound test page loaded');
+
+        const audio = new Audio('assets/sound/background/menuTheme.mp3');
+        audio.loop = true;
+        audio.volume = 0.5;
+
+        console.log('🎵 Audio object created:', audio.src);
+
+        // Test file exists
+        fetch('assets/sound/background/menuTheme.mp3')
+            .then(response => {
+                if (response.ok) {
+                    console.log('✅ Menu theme file exists');
+                    document.getElementById('status').textContent = 'Status: File exists - ready to test';
+                } else {
+                    console.log('❌ Menu theme file not found');
+                    document.getElementById('status').textContent = 'Status: File not found!';
+                }
+            })
+            .catch(error => {
+                console.log('❌ Error checking file:', error);
+                document.getElementById('status').textContent = 'Status: Error checking file';
+            });
+
+        // Test button
+        document.getElementById('testBtn').addEventListener('click', () => {
+            console.log('🎵 Test button clicked - attempting to play...');
+
+            audio.play()
+                .then(() => {
+                    console.log('✅ Menu theme playing successfully!');
+                    document.getElementById('status').textContent = 'Status: Playing! 🎵';
+                })
+                .catch(e => {
+                    console.log('❌ Menu theme play error:', e);
+                    document.getElementById('status').textContent = 'Status: Error - ' + e.message;
+                });
+        });
+
+        // Stop on page unload
+        window.addEventListener('beforeunload', () => {
+            audio.pause();
+        });
+    </script>
+</body>
+</html>
