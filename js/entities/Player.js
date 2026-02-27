@@ -39,22 +39,22 @@ export class Player {
         // CẤU HÌNH ANIMATION
         // ==========================================
         this.runImage = new Image();
-        this.runImage.src = '/chuck-king/Assets/player_assets/Run (32x32).png';
+        this.runImage.src = './Assets/player_assets/Run (32x32).png';
 
         this.idleImage = new Image();
-        this.idleImage.src = '/chuck-king/Assets/player_assets/Idle (32x32).png';
+        this.idleImage.src = './Assets/player_assets/Idle (32x32).png';
 
         this.jumpImage = new Image();
-        this.jumpImage.src = '/chuck-king/Assets/player_assets/Jump (32x32).png';
+        this.jumpImage.src = './Assets/player_assets/Jump (32x32).png';
 
         this.fallImage = new Image();
-        this.fallImage.src = '/chuck-king/Assets/player_assets/Fall (32x32).png';
+        this.fallImage.src = './Assets/player_assets/Fall (32x32).png';
         
         this.appearingImage = new Image();
-        this.appearingImage.src = '/chuck-king/Assets/player_assets/Appearing (96x96).png';
+        this.appearingImage.src = './Assets/player_assets/Appearing (96x96).png';
 
         this.disappearingImage = new Image();
-        this.disappearingImage.src = '/chuck-king/Assets/player_assets/Desappearing (96x96).png'; // Lưu ý đúng tên file của bạn
+        this.disappearingImage.src = './Assets/player_assets/Desappearing (96x96).png'; // Lưu ý đúng tên file của bạn
         
         this.frameX = 0;           
         this.maxRunFrames = 12;    
