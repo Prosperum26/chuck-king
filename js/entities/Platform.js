@@ -23,8 +23,8 @@ export class Platform {
         this.image = new Image();
 
         if (this.type === "broken") {
-            // Wood 2: Bục vỡ sau khi chạm
-            this.image.src = "../assets/wood2.png";
+            // Wood 2: Bục vỡ sau khi chạm (dùng import.meta.url cho GitHub Pages)
+            this.image.src = new URL('../../Assets/wood2.png', import.meta.url).href;
             
             // --- Logic mới thay thế cho bục broken ---
             this.isTriggered = false;  // Trạng thái: true là đã bắt đầu đếm ngược
@@ -32,9 +32,9 @@ export class Platform {
             this.respawnTimer = 0;     // Đếm ngược thời gian để hồi phục
             
         } else {
-            // Wood 1 và 3: Random cho các bục fake và real
-            // Lấy ngẫu nhiên tỷ lệ 50-50
-            const randomWood = Math.random() > 0.5 ? "../assets/wood3.png" : "../assets/wood.png";
+            // Wood 1 và 3: Random cho các bục fake và real (dùng import.meta.url cho GitHub Pages)
+            const getWood = (name) => new URL(`../../Assets/${name}`, import.meta.url).href;
+            const randomWood = Math.random() > 0.5 ? getWood('wood3.png') : getWood('wood.png');
             this.image.src = randomWood;
         }
     }

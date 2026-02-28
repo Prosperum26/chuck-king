@@ -31,7 +31,7 @@ body {
   /* Đảm bảo nội dung bên trong không bị méo */
   object-fit: contain;
 
-  background: url("../assets/scene1_sun_background.jpg");
+  background: url("../Assets/scene1_sun_background.jpg");
 
   /* Khử răng cưa cho pixel art (nếu sau này bạn dùng hình ảnh gà pixel) */
   image-rendering: pixelated;

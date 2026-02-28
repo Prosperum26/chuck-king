@@ -6,23 +6,20 @@ export class SoundManager {
     constructor() {
         // Paths to sound files
         this.soundPaths = {
-            // Menu theme
-            menuTheme: 'assets/sound/background/menuTheme.mp3',
-            
+            // Menu theme (./Assets cho GitHub Pages)
+            menuTheme: './Assets/sound/background/menuTheme.mp3',
             // Background music
-            backgroundScene1: 'assets/sound/background/background_scene1.ogg',
-            backgroundScene2: 'assets/sound/background/background_scene2.mp3',
-            
+            backgroundScene1: './Assets/sound/background/background_scene1.ogg',
+            backgroundScene2: './Assets/sound/background/background_scene2.mp3',
             // Sound effects - Player actions
-            jump: 'assets/sound/SFX/jump.mp3',
-            fall: 'assets/sound/SFX/DEEP_fall.mp3',
-            conversation: 'assets/sound/SFX/sfx_conversation.mp3',
-            
+            jump: './Assets/sound/SFX/jump.mp3',
+            fall: './Assets/sound/SFX/DEEP_fall.mp3',
+            conversation: './Assets/sound/SFX/sfx_conversation.mp3',
             // Walking sounds
-            walkScene1Left: 'assets/sound/SFX/sfx_walk_scene1_left.flac',
-            walkScene1Right: 'assets/sound/SFX/sfx_walk_scene1_right.flac',
-            walkScene2Left: 'assets/sound/SFX/sfx_walk_scene2_left.flac',
-            walkScene2Right: 'assets/sound/SFX/sfx_walk_scene2_right.flac',
+            walkScene1Left: './Assets/sound/SFX/sfx_walk_scene1_left.flac',
+            walkScene1Right: './Assets/sound/SFX/sfx_walk_scene1_right.flac',
+            walkScene2Left: './Assets/sound/SFX/sfx_walk_scene2_left.flac',
+            walkScene2Right: './Assets/sound/SFX/sfx_walk_scene2_right.flac',
         };
         
         // Audio elements for background music
