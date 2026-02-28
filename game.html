@@ -16,12 +16,12 @@
     <div id="api-key-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>⚙️ Cấu Hình AI API (OpenAI)</h2>
+                <h2>⚙️ Cấu Hình AI API</h2>
                 <p style="font-size: 0.85em; margin-top: 5px; color: #666;">Tùy chọn - Để trống để chơi với hardcoded messages</p>
             </div>
             <div class="modal-body">
                 <p class="modal-description">
-                    🤖 <strong>OpenAI API</strong> sẽ sinh ra những lời trêu chọc AI ngẫu nhiên khi bạn chơi.
+                    🤖 <strong>AI API</strong> sẽ sinh ra những lời trêu chọc AI ngẫu nhiên khi bạn chơi.
                     <br><br>
                     <strong>Chưa có API Key?</strong> 
                     <a href="docs/GET_API_KEY.md" target="_blank" style="color: #0066cc; text-decoration: underline;">📖 Xem hướng dẫn lấy API Key</a>
@@ -30,33 +30,32 @@
                 <!-- Endpoint Info -->
                 <div class="form-group">
                     <label for="api-endpoint">
-                        🔗 OpenAI API Endpoint:
-                        <span title="Đây là URL để gọi API OpenAI ChatGPT" style="cursor: help; color: #0066cc;">ⓘ</span>
+                        🔗 AI API Endpoint:
+                        <span title="Bạn có thể dùng OpenAI hoặc OpenAI-compatible endpoint" style="cursor: help; color: #0066cc;">ⓘ</span>
                     </label>
                     <input 
                         type="text" 
                         id="api-endpoint" 
                         class="form-input" 
-                        placeholder="https://api.openai.com/v1/chat/completions"
+                        placeholder="OpenAI: https://api.openai.com/v1/chat/completions | Gemini: https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
                         value="https://api.openai.com/v1/chat/completions"
-                        readonly
-                        title="Endpoint mặc định cho OpenAI API">
+                        title="Endpoint để gọi Chat Completions API">
                     <small style="color: #666; margin-top: 3px; display: block;">
-                        💡 Mặc định - không cần thay đổi
+                        💡 Gemini: dùng endpoint dạng ...:generateContent và nhập API key (key sẽ gửi qua header x-goog-api-key)
                     </small>
                 </div>
                 
                 <!-- API Key Info -->
                 <div class="form-group">
                     <label for="api-key">
-                        🔑 API Key (sk-...):
-                        <span title="API key để authenticate với OpenAI - Bắt đầu bằng 'sk-'" style="cursor: help; color: #0066cc;">ⓘ</span>
+                        🔑 API Key:
+                        <span title="OpenAI/OpenAI-compatible thường dùng Bearer token; Gemini dùng key query param" style="cursor: help; color: #0066cc;">ⓘ</span>
                     </label>
                     <input 
                         type="password" 
                         id="api-key" 
                         class="form-input" 
-                        placeholder="sk-... (lấy từ https://platform.openai.com/api-keys)"
+                        placeholder="OpenAI key hoặc Gemini key"
                         autocomplete="off">
                     <small style="color: #666; margin-top: 3px; display: block;">
                         ⚠️ Giữ bí mật - Không share với ai
@@ -96,11 +95,22 @@
     <div id="game-container" class="hidden">
         <canvas id="game-canvas"></canvas>
         <div id="ui-overlay">
-            <div id="ai-dialog" class="ai-dialog hidden">
-                <div id="ai-dialog-content" class="ai-dialog-content">
-                    <span id="ai-message"></span>
+            <!-- NPC Dialog Box (dialog + trêu chọc AI dùng chung) -->
+            <div id="npc-dialog-box" class="npc-dialog-box hidden">
+                <div class="npc-dialog-header">
+                    <span id="npc-name" class="npc-name">NPC</span>
+                    <button id="npc-dialog-close-btn" class="npc-dialog-close-btn" title="Đóng">×</button>
+                </div>
+                <div class="npc-dialog-body">
+                    <div id="npc-dialog-text" class="npc-dialog-text">
+                        Xin chào!
+                    </div>
+                </div>
+                <div class="npc-dialog-footer">
+                    <!-- Next button ẩn - chỉ auto-close theo timer -->
                 </div>
             </div>
+            
             <div id="controls">
                 <button id="toggle-api-btn" class="control-btn" title="Bật/tắt cửa sổ cấu hình API">⚙️ API</button>
                 <button id="mute-ai-btn" class="control-btn">🔇 Mute AI</button>

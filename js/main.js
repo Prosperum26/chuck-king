@@ -7,6 +7,7 @@ import { AIMessageGenerator } from './systems/AIMessageGenerator.js';
 import { APIKeyManager } from './systems/APIKeyManager.js';
 import { AICallLogic } from './systems/AICallLogic.js';
 import { UIManager } from './ui/UIManager.js';
+import { NPCDialogSystem } from './systems/NPCDialogSystem.js';
 
 // ===== Initialize Modal Elements (AI/FE) =====
 const modal = document.getElementById('api-key-modal');
@@ -45,6 +46,7 @@ const eventTracker = new EventTracker();
 const aiMessageGenerator = new AIMessageGenerator();
 const aiRuleEngine = new AIRuleEngine(aiMessageGenerator, eventTracker);
 const uiManager = new UIManager();
+const npcDialogSystem = new NPCDialogSystem(aiMessageGenerator);
 
 // ===== Platforms (Dev_Game map: moving, broken, bouncy, ice, oneWay, fake) =====
 // [SỬA]: Đưa platforms và player ra ngoài để truy cập toàn cục, nhưng KHÔNG khởi tạo giá trị ngay
@@ -158,9 +160,18 @@ async function initGameSystems() {
     // 1. Chờ nạp Map xong
     await loadMap();
 
-    // 2. Sau khi có platforms mới tạo Player và Engine
-    player = new Player(1550, 4320 - 150, eventTracker);
-    gameEngine = new GameEngine(canvas, ctx, player, platforms, eventTracker, aiRuleEngine, uiManager);
+        // 2. Sau khi có platforms mới tạo Player và Engine (kèm NPCDialogSystem để chạy typing + auto-close)
+        player = new Player(1550, 4320 - 150, eventTracker);
+        gameEngine = new GameEngine(
+            canvas,
+            ctx,
+            player,
+            platforms,
+            eventTracker,
+            aiRuleEngine,
+            uiManager,
+            npcDialogSystem
+        );
 
     // 3. Mở Modal cấu hình
     initGameWhenReady();
@@ -232,7 +243,7 @@ function showStatus(message, type) {
     apiStatus.className = `api-status ${type}`;
 }
 
-function startGame() {
+async function startGame() {
     // SỬA: Thêm kiểm tra nếu gameEngine chưa sẵn sàng (do load map chậm hoặc lỗi) thì không start được, tránh lỗi
     if (!gameEngine) {
         alert("Game chưa sẵn sàng, vui lòng đợi giây lát!");
@@ -248,12 +259,19 @@ function startGame() {
 
     if (gameAI.hasValidCredentials()) {
         aiMessageGenerator.setAPIEndpoint(gameAI.endpoint, gameAI.apiKey, gameAI.model);
-        console.log('✅ AI API configured for taunt messages');
+        console.log('✅ AI API configured');
     } else {
         console.log('ℹ️ Using hardcoded AI messages (no API configured)');
     }
 
     gameEngine.start();
+
+    // Prefetch: dialogs (1 lần toàn game) + taunts (1 lần mỗi stage)
+    await aiMessageGenerator.prefetchAllDialogs();
+    aiMessageGenerator.prefetchStageTaunts('stage1', { deathCount: 0 });
+
+    // NPC dialog: intro (AI cache hoặc default)
+    setTimeout(() => npcDialogSystem.showDialog('intro'), 600);
 }
 
 function toggleApiModal() {
@@ -305,3 +323,15 @@ document.getElementById("mute-ai-btn").addEventListener("click", () => {
         btn.classList.remove("muted");
     }
 });
+// ===== NPC Dialog Trigger Helpers =====
+window.triggerNPCDialog = function(dialogKey) {
+    if (npcDialogSystem) npcDialogSystem.showDialog(dialogKey);
+};
+window.changeStage = function(stageName) {
+    if (npcDialogSystem) npcDialogSystem.onStageChange(stageName);
+    const map = { easy: 'stage1', medium: 'stage2', hard: 'stage3', boss: 'stage4' };
+    const key = map[stageName] || (['stage1', 'stage2', 'stage3', 'stage4'].includes(stageName) ? stageName : null);
+    if (key) aiMessageGenerator.prefetchStageTaunts(key, { deathCount: eventTracker.getDeathCount() });
+};
+
+// (Demo buttons removed from game UI)

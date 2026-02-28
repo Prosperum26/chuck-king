@@ -1,49 +1,24 @@
 /**
- * UIManager - Manages UI overlay (AI dialog, stats)
+ * UIManager - Stats và overlay (NPC dialog do NPCDialogSystem quản lý)
  */
 export class UIManager {
     constructor() {
-        this.aiDialog = document.getElementById('ai-dialog');
-        this.aiMessage = document.getElementById('ai-message');
         this.deathCountDisplay = document.getElementById('death-count');
         this.idleTimeDisplay = document.getElementById('idle-time');
-        
-        this.messageDisplayTime = 0;
-        this.messageDuration = 3; // Show message for 3 seconds
-        
         this.setupEventListeners();
     }
-    
+
     setupEventListeners() {
-        // Listen for AI messages
-        window.addEventListener('aiMessage', (e) => {
-            this.showAIMessage(e.detail.message);
-        });
-    }
-    
-    showAIMessage(message) {
-        this.aiMessage.textContent = message;
-        this.aiDialog.classList.remove('hidden');
-        this.messageDisplayTime = this.messageDuration;
-    }
-    
-    hideAIMessage() {
-        this.aiDialog.classList.add('hidden');
+        // Không còn aiMessage; trêu chọc hiển thị qua NPCDialogSystem (npcTaunt)
     }
     
     update(dt) {
-        // Update message display timer
-        if (this.messageDisplayTime > 0) {
-            this.messageDisplayTime -= dt;
-            if (this.messageDisplayTime <= 0) {
-                this.hideAIMessage();
-            }
-        }
+        // Reserved for future UI timers
     }
     
     updateStats(deathCount, idleTime) {
-        this.deathCountDisplay.textContent = deathCount;
-        this.idleTimeDisplay.textContent = idleTime.toFixed(1) + 's';
+        if (this.deathCountDisplay) this.deathCountDisplay.textContent = deathCount;
+        if (this.idleTimeDisplay) this.idleTimeDisplay.textContent = idleTime.toFixed(1) + 's';
     }
 }
 
