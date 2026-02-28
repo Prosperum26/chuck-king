@@ -24,7 +24,7 @@ export class Platform {
 
         if (this.type === "broken") {
             // Wood 2: Bục vỡ sau khi chạm (dùng import.meta.url cho GitHub Pages)
-            this.image.src = new URL('../../Assets/wood2.png', import.meta.url).href;
+            this.image.src = new URL('../../assets/wood2.png', import.meta.url).href;
             
             // --- Logic mới thay thế cho bục broken ---
             this.isTriggered = false;  // Trạng thái: true là đã bắt đầu đếm ngược
@@ -33,7 +33,7 @@ export class Platform {
             
         } else {
             // Wood 1 và 3: Random cho các bục fake và real (dùng import.meta.url cho GitHub Pages)
-            const getWood = (name) => new URL(`../../Assets/${name}`, import.meta.url).href;
+            const getWood = (name) => new URL(`../../assets/${name}`, import.meta.url).href;
             const randomWood = Math.random() > 0.5 ? getWood('wood3.png') : getWood('wood.png');
             this.image.src = randomWood;
         }

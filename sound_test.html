@@ -17,14 +17,14 @@
     <script>
         console.log('🎵 Sound test page loaded');
 
-        const audio = new Audio('./Assets/sound/background/menuTheme.mp3');
+        const audio = new Audio('./assets/sound/background/menuTheme.mp3');
         audio.loop = true;
         audio.volume = 0.5;
 
         console.log('🎵 Audio object created:', audio.src);
 
         // Test file exists
-        fetch('./Assets/sound/background/menuTheme.mp3')
+        fetch('./assets/sound/background/menuTheme.mp3')
             .then(response => {
                 if (response.ok) {
                     console.log('✅ Menu theme file exists');

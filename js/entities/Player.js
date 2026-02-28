@@ -47,22 +47,22 @@ export class Player {
         // CẤU HÌNH ANIMATION (dùng import.meta.url cho GitHub Pages)
         const getAsset = (path) => new URL(path, import.meta.url).href;
         this.runImage = new Image();
-        this.runImage.src = getAsset('../../Assets/Walk.png');
+        this.runImage.src = getAsset('../../assets/Walk.png');
 
         this.idleImage = new Image();
-        this.idleImage.src = getAsset('../../Assets/idle.png');
+        this.idleImage.src = getAsset('../../assets/idle.png');
 
         this.jumpImage = new Image();
-        this.jumpImage.src = getAsset('../../Assets/Jump.png');
+        this.jumpImage.src = getAsset('../../assets/Jump.png');
 
         this.fallImage = new Image();
-        this.fallImage.src = getAsset('../../Assets/Fall.png');
+        this.fallImage.src = getAsset('../../assets/Fall.png');
 
         this.appearingImage = new Image();
         this.appearingImage.src = getAsset('../../Assets/player_assets/Appearing (96x96).png');
 
         this.disappearingImage = new Image();
-        this.disappearingImage.src = getAsset('../../Assets/player_assets/Desappearing (96x96).png'); 
+        this.disappearingImage.src = getAsset('../../assets/player_assets/Desappearing (96x96).png'); 
         
         this.frameX = 0;           
         

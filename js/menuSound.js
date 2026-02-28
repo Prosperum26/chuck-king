@@ -2,7 +2,7 @@
  * Menu theme for index.html
  */
 const menuThemeAudio = new Audio();
-menuThemeAudio.src = './Assets/sound/background/menuTheme.mp3';
+menuThemeAudio.src = './assets/sound/background/menuTheme.mp3';
 menuThemeAudio.loop = true;
 menuThemeAudio.volume = 0.5;
 
