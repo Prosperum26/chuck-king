@@ -6,11 +6,11 @@
 
 // ========================
 // TRÊU CHỌC (Taunt) - Default khi không có API
-// Key: death | idle | stuck
+// Key: fall | idle | stuck
 // ========================
 export const DEFAULT_TAUNT_MESSAGES = {
-    death: [
-        "Lại chết rồi à?",
+    fall: [
+        "Lại rơi rồi à?",
         "Giỏi quá nhỉ!",
         "Lần thứ mấy rồi?",
         "Cố gắng lên nào!",
@@ -29,9 +29,9 @@ export const DEFAULT_TAUNT_MESSAGES = {
     ],
     stuck: [
         "Kẹt ở đây rồi à?",
-        "Lại chết ở chỗ này nữa?",
+        "Lại rơi ở chỗ này nữa?",
         "Học hỏi đi chứ!",
-        "Làm sao mà chết hoài vậy?",
+        "Làm sao mà rơi hoài vậy?",
         "Thử cách khác đi!",
         "Ngu quá!",
     ],
@@ -42,15 +42,15 @@ export const TAUNT_NPC_NAME = '😏 AI';
 
 // ========================
 // PROMPT TRÊU CHỌC (gửi API)
-// {{triggerDesc}} sẽ được thay bằng mô tả theo từng trigger (death/idle/stuck)
+// {{triggerDesc}} sẽ được thay bằng mô tả theo từng trigger (fall/idle/stuck)
 // ========================
 export const TAUNT_PROMPT_BASE = `Bạn là một NPC mỉa mai vô cùng cay đắng và tệ bạo trong game platformer. {{triggerDesc}} Hãy nói một câu ngắn (tối đa 15-20 từ) để trêu chọc và châm biếm người chơi một cách cơ cấu, đanh thép và vô duyên. Không giải thích, chỉ trả về câu nói ngắn gọn.`;
 
-// Mẫu mô tả context cho từng trigger. Placeholder: {{deathCount}}, {{idleTime}}, {{deathsInZone}}, {{lastDeathZone}}
+// Mẫu mô tả context cho từng trigger. Placeholder: {{fallCount}}, {{idleTime}}, {{fallsInZone}}, {{lastFallZone}}
 export const TAUNT_TRIGGER_DESCRIPTIONS = {
-    death: 'Người chơi vừa chết lần thứ {{deathCount}}.',
+    fall: 'Người chơi vừa rơi lần thứ {{fallCount}}.',
     idle: 'Người chơi đã không làm gì trong {{idleTime}} giây.',
-    stuck: 'Người chơi đã chết {{deathsInZone}} lần ở khu vực "{{lastDeathZone}}" và vẫn không thể vượt qua.',
+    stuck: 'Người chơi đã rơi {{fallsInZone}} lần ở khu vực "{{lastFallZone}}" và vẫn không thể vượt qua.',
 };
 
 // ========================

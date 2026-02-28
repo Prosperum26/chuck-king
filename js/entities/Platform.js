@@ -40,9 +40,13 @@ export class Platform {
     }
 
     update(deltaTime, player) { 
+        // Chuẩn hóa deltaTime theo frame 60fps (giữ tương thích map cũ)
+        const frameFactor = (typeof deltaTime === 'number' && isFinite(deltaTime) && deltaTime > 0)
+            ? deltaTime / (1000 / 60)
+            : 1;
         // 1. Logic cho bục di chuyển
         if (this.type === "moving") {
-            this.x += this.speed * this.direction;
+            this.x += this.speed * this.direction * frameFactor;
             
             // Đảo chiều
             if (this.x >= this.startX + this.range) {

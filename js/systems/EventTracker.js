@@ -1,15 +1,13 @@
 export class EventTracker {
   constructor() {
-    this.deathCount = 0;
-    this.lastTrackedDeathCount = 0;
     this.idleTime = 0;
-    this.lastDeathPosition = null;
-    this.lastDeathZone = null;
-    this.deathZones = {};
     this.lastInputTime = Date.now();
     this.lastIdleTriggerTime = 0;
     this.idleTriggerCooldown = 8000;
     this.fallCount = 0;
+    this.lastTrackedFallCount = 0;
+    this.lastFallZone = null;
+    this.fallZones = {};
     
     // Event listener system for sound and other handlers
     this.listeners = {};
@@ -60,11 +58,8 @@ export class EventTracker {
   }
 
   track(eventType, data) {
-    if (eventType === "death") {
-      this.onDeath(data?.zone ?? "bottom");
-    }
     if (eventType === "fall") {
-      this.onFall();
+      this.onFall(data?.zone ?? "bottom");
     }
     if (eventType === "jump" || eventType === "bounce") {
       this.onPlayerInput();
@@ -74,30 +69,25 @@ export class EventTracker {
     this.emit(eventType, data);
   }
 
-  onDeath(zoneId) {
-    this.deathCount++;
-    this.lastDeathZone = zoneId;
-
-    if (!this.deathZones[zoneId]) {
-      this.deathZones[zoneId] = 0;
-    }
-    this.deathZones[zoneId]++;
-  }
-
-  onFall() {
+  onFall(zoneId) {
     this.fallCount++;
+    this.lastFallZone = zoneId;
+    if (!this.fallZones[zoneId]) {
+      this.fallZones[zoneId] = 0;
+    }
+    this.fallZones[zoneId]++;
   }
 
   getFallCount() {
     return this.fallCount;
   }
 
-  hasJustDied() {
-    return this.deathCount > this.lastTrackedDeathCount;
+  hasJustFallen() {
+    return this.fallCount > this.lastTrackedFallCount;
   }
 
-  markDeathAsTriggered() {
-    this.lastTrackedDeathCount = this.deathCount;
+  markFallAsTriggered() {
+    this.lastTrackedFallCount = this.fallCount;
   }
 
   isIdle() {
@@ -113,29 +103,24 @@ export class EventTracker {
     return false;
   }
 
-  getDeathCountInZone(zoneId) {
-    return this.deathZones[zoneId] || 0;
-  }
-
   getIdleTime() {
     return this.idleTime;
   }
 
-  getDeathCount() {
-    return this.deathCount;
+  getFallCountInZone(zoneId) {
+    return this.fallZones[zoneId] || 0;
   }
 
-  getLastDeathZone() {
-    return this.lastDeathZone;
+  getLastFallZone() {
+    return this.lastFallZone;
   }
 
   getContext() {
     return {
-      deathCount: this.deathCount,
       idleTime: this.idleTime,
-      lastDeathZone: this.lastDeathZone,
-      deathZones: { ...this.deathZones },
       fallCount: this.fallCount,
+      lastFallZone: this.lastFallZone,
+      fallZones: { ...this.fallZones },
     };
   }
 }

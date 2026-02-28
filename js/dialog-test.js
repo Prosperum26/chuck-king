@@ -109,7 +109,7 @@ saveApiBtn.addEventListener('click', async () => {
         // Prefetch (same behavior as in-game): 1 lần lấy full dialog + 1 lần lấy taunt pool cho stage hiện tại
         aiMessageGenerator.prefetchAllDialogs();
         const key = dialogKeySelect.value || 'stage1';
-        aiMessageGenerator.prefetchStageTaunts(key, { deathCount: 0 });
+        aiMessageGenerator.prefetchStageTaunts(key, { fallCount: 0 });
     } else {
         showStatus(`❌ ${result.message}`, 'error');
     }
@@ -123,13 +123,13 @@ showDialogBtn.addEventListener('click', () => {
 
 showTauntBtn.addEventListener('click', () => {
     const context = {
-        deathCount: 5,
+        fallCount: 5,
         idleTime: 0,
-        deathZones: { bottom: 5 },
-        lastDeathZone: 'bottom'
+        fallZones: { bottom: 5 },
+        lastFallZone: 'bottom'
     };
-    // Generate a sample death taunt (uses API if configured, otherwise default)
-    aiMessageGenerator.generateMessage('death', context);
+    // Generate a sample fall taunt (uses API if configured, otherwise default)
+    aiMessageGenerator.generateMessage('fall', context);
 });
 
 // Simple loop to drive NPCDialogSystem.update (typewriter + auto-close)

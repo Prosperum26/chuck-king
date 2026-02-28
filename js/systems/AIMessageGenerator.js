@@ -1,6 +1,6 @@
 /**
  * AIMessageGenerator - Generates AI taunt messages + NPC dialog (intro, stage, ending)
- * Trêu chọc: death/idle/stuck (API hoặc default)
+ * Trêu chọc: fall/idle/stuck (API hoặc default)
  * Dialog: intro, stage1-4, ending (API hoặc default, output chia thành nhiều dòng)
  */
 import {
@@ -40,7 +40,7 @@ export class AIMessageGenerator {
     
     /**
      * Generate AI message based on trigger type and context
-     * @param {string} triggerType - 'death', 'idle', or 'stuck'
+     * @param {string} triggerType - 'fall', 'idle', or 'stuck'
      * @param {object} context - Event tracker context
      */
     async generateMessage(triggerType, context) {
@@ -62,7 +62,7 @@ export class AIMessageGenerator {
         }
         
         // Fallback to hardcoded messages nếu không có API hoặc API fail
-        const messages = this.hardcodedMessages[triggerType] || this.hardcodedMessages.death;
+        const messages = this.hardcodedMessages[triggerType] || this.hardcodedMessages.fall;
         const randomMessage = messages[Math.floor(Math.random() * messages.length)];
         this.currentMessage = randomMessage;
         console.log(`[AIMessageGenerator] 💬 DEFAULT(${triggerType}): "${randomMessage}"`);
@@ -98,8 +98,8 @@ export class AIMessageGenerator {
 
         this.stageTauntPrefetchInProgress.add(key);
         try {
-            const deathCount = Number(context?.deathCount || 0);
-            const prompt = `Bạn là NPC mỉa mai trong game platformer. Người chơi đang ở ${key}, đã chết/rơi ${deathCount} lần.
+            const fallCount = Number(context?.fallCount || 0);
+            const prompt = `Bạn là NPC mỉa mai trong game platformer. Người chơi đang ở ${key}, đã rơi ${fallCount} lần.
 Hãy tạo một danh sách câu trêu chọc (châm biếm/cà khịa) để dùng ngẫu nhiên trong stage này.
 Yêu cầu:
 - Trả về ĐÚNG một JSON array gồm 20 đến 30 câu tiếng Việt.
@@ -147,14 +147,14 @@ Ví dụ: ["Câu 1.","Câu 2.","Câu 3..."]`;
      * Build prompt for AI based on trigger type (dùng config: TAUNT_PROMPT_BASE + TAUNT_TRIGGER_DESCRIPTIONS)
      */
     buildPrompt(triggerType, context) {
-        const deathCountInZone = context.deathZones?.[context.lastDeathZone] || 0;
+        const fallCountInZone = context.fallZones?.[context.lastFallZone] || 0;
         const vars = {
-            deathCount: context.deathCount,
+            fallCount: context.fallCount,
             idleTime: Math.floor(context.idleTime),
-            deathsInZone: deathCountInZone,
-            lastDeathZone: context.lastDeathZone || 'bottom',
+            fallsInZone: fallCountInZone,
+            lastFallZone: context.lastFallZone || 'bottom',
         };
-        let triggerDesc = TAUNT_TRIGGER_DESCRIPTIONS[triggerType] || TAUNT_TRIGGER_DESCRIPTIONS.death;
+        let triggerDesc = TAUNT_TRIGGER_DESCRIPTIONS[triggerType] || TAUNT_TRIGGER_DESCRIPTIONS.fall;
         for (const [key, value] of Object.entries(vars)) {
             triggerDesc = triggerDesc.replace(new RegExp(`{{${key}}}`, 'g'), String(value));
         }

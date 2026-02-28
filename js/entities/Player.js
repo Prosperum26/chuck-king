@@ -107,7 +107,7 @@ export class Player {
             this.frameTimer = 0;
             this.vx = 0;
             this.vy = 0; 
-            if (this.eventTracker) this.eventTracker.track('death');
+            if (this.eventTracker) this.eventTracker.track('fall', { zone: 'bottom' });
         }
     }
 
@@ -318,7 +318,8 @@ export class Player {
         // KÍCH HOẠT HIỆU ỨNG NGÃ
         if (!previousGrounded && this.isGrounded) {
             let fallDistance = this.y - this.peakY;
-            let fallThreshold = canvasHeight / 2; 
+            // Ngưỡng "rơi sâu" cố định ~ nửa màn hình 1080p (giúp hiệu ứng ổn định trên map cao)
+            let fallThreshold = Math.min(canvasHeight / 2, 540); 
             
             if (fallDistance > fallThreshold) {
                 this.isLanding = true;
@@ -507,6 +508,9 @@ export class Player {
             ctx.fillStyle = "#ff4444";
             ctx.fillRect(screenX, screenY, this.w, this.h);
         }
+
+        // Tọa độ tâm nhân vật trên màn hình (dùng cho HUD nhỏ phía trên đầu)
+        const centerX = screenX + this.w / 2;
 
         // 4. VẼ THANH LỰC NHẢY (Không vẽ lúc đang dùng Animation Appear/Disappear)
         if (this.charge > 0 && this.currentState !== 'appearing' && this.currentState !== 'disappearing') {

@@ -140,11 +140,11 @@ const gameAI = {
         return await AICallLogic.generateStory(this.apiKey, this.endpoint, this.model);
     },
 
-    async generateRage(stage, deathCount = 0) {
+    async generateRage(stage, fallCount = 0) {
         if (!this.hasValidCredentials()) {
             return { success: false, message: 'Chưa cấu hình API' };
         }
-        return await AICallLogic.generateRage(this.apiKey, this.endpoint, stage, deathCount, this.model);
+        return await AICallLogic.generateRage(this.apiKey, this.endpoint, stage, fallCount, this.model);
     },
 
     async testAPI() {
@@ -277,7 +277,7 @@ async function startGame() {
 
     // Prefetch: dialogs (1 lần toàn game) + taunts (1 lần mỗi stage)
     await aiMessageGenerator.prefetchAllDialogs();
-    aiMessageGenerator.prefetchStageTaunts('stage1', { deathCount: 0 });
+    aiMessageGenerator.prefetchStageTaunts('stage1', { fallCount: 0 });
 
     // NPC dialog: intro (AI cache hoặc default)
     setTimeout(() => npcDialogSystem.showDialog('intro'), 600);
@@ -340,7 +340,7 @@ window.changeStage = function(stageName) {
     if (npcDialogSystem) npcDialogSystem.onStageChange(stageName);
     const map = { easy: 'stage1', medium: 'stage2', hard: 'stage3', boss: 'stage4' };
     const key = map[stageName] || (['stage1', 'stage2', 'stage3', 'stage4'].includes(stageName) ? stageName : null);
-    if (key) aiMessageGenerator.prefetchStageTaunts(key, { deathCount: eventTracker.getDeathCount() });
+    if (key) aiMessageGenerator.prefetchStageTaunts(key, { fallCount: eventTracker.getFallCount() });
 };
 
 // ===== Sound Manager Event Listeners =====

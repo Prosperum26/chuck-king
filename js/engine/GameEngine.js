@@ -1,38 +1,41 @@
-import { Camera } from '../systems/Camera.js';
+import { Camera } from "../systems/Camera.js";
 
 export class GameEngine {
-    constructor(canvas, ctx, player, platforms, eventTracker, aiRuleEngine, uiManager, npcDialogSystem = null) {
-        this.canvas = canvas;
-        this.ctx = ctx;
-        this.player = player;
-        this.platforms = platforms;
-        this.eventTracker = eventTracker;
-        this.aiRuleEngine = aiRuleEngine;
-        this.uiManager = uiManager;
-        this.npcDialogSystem = npcDialogSystem;
-        this.fixedDeltaTime = 1000 / 60; // Luôn tính vật lý ở 60 FPS
-        this.accumulator = 0;
-        this.lastTime = performance.now();
-        
-        // Map dimensions
-        this.mapWidth = 1920;
-        this.mapHeight = 4320;
-        this.viewportWidth = 1920;
-        this.viewportHeight = 1080;
-        
-        // Camera system
-        this.camera = new Camera(this.mapWidth, this.mapHeight, this.viewportWidth, this.viewportHeight);
-        
-        // Quản lý Input
-        this.input = {
-            keys: {}
-        };
+  constructor(
+    canvas,
+    ctx,
+    player,
+    platforms,
+    eventTracker,
+    aiRuleEngine,
+    uiManager,
+    npcDialogSystem = null,
+  ) {
+    this.canvas = canvas;
+    this.ctx = ctx;
+    this.player = player;
+    this.platforms = platforms;
+    this.eventTracker = eventTracker;
+    this.aiRuleEngine = aiRuleEngine;
+    this.uiManager = uiManager;
+    this.npcDialogSystem = npcDialogSystem;
 
-    // Quản lý Input
-    this.input = {
-      keys: {},
-    };
+    // World / viewport
+    this.mapWidth = 1920;
+    this.mapHeight = 4320;
+    this.viewportWidth = 1920;
+    this.viewportHeight = 1080;
 
+    this.camera = new Camera(this.mapWidth, this.mapHeight, this.viewportWidth, this.viewportHeight);
+
+    // Fixed timestep physics (60fps)
+    this.fixedDeltaTime = 1000 / 60;
+    this.accumulator = 0;
+    this.lastTime = performance.now();
+    this.running = false;
+
+    // Input
+    this.input = { keys: {} };
     this.setupInput();
   }
 
@@ -40,149 +43,111 @@ export class GameEngine {
     window.addEventListener("keydown", (e) => {
       this.input.keys[e.code] = true;
       if (e.code === "Space" || e.code.startsWith("Arrow")) e.preventDefault();
-      this.eventTracker.onPlayerInput();
+      this.eventTracker?.onPlayerInput?.();
     });
 
     window.addEventListener("keyup", (e) => {
       this.input.keys[e.code] = false;
-      this.eventTracker.onPlayerInput();
+      this.eventTracker?.onPlayerInput?.();
       if (e.code === "Space") {
-        this.player.jump();
+        this.player?.jump?.();
       }
     });
   }
 
   start() {
-    this.then = performance.now();
-    this.loop();
+    this.running = true;
+    this.lastTime = performance.now();
+    requestAnimationFrame((t) => this.loop(t));
   }
 
-  loop() {
-    const now = performance.now();
+  stop() {
+    this.running = false;
+  }
+
+  loop(now) {
+    if (!this.running) return;
+
     let frameTime = now - this.lastTime;
     this.lastTime = now;
 
+    // Prevent huge jumps (tab switching)
     if (frameTime > 250) frameTime = 250;
 
     this.accumulator += frameTime;
-
     while (this.accumulator >= this.fixedDeltaTime) {
-      this.update();
+      this.updateFixed(this.fixedDeltaTime);
       this.accumulator -= this.fixedDeltaTime;
     }
 
-    // AI & UI: once per frame with real time (eventTracker idle, aiRuleEngine cooldown, stats)
+    // AI & UI: once per frame (real dt)
     const dtSec = frameTime / 1000;
-    this.eventTracker.update(dtSec, this.player);
-    this.aiRuleEngine.update(dtSec);
-    this.aiRuleEngine.checkTriggers();
-    this.uiManager.update(dtSec);
-    this.uiManager.updateStats(
-      this.eventTracker.getDeathCount(),
-      this.eventTracker.getIdleTime(),
-      this.eventTracker.getFallCount(),
-    );
-        
-        // Update NPC Dialog System (chỉ timer auto-close; trêu chọc do AIRuleEngine → npcTaunt)
-        if (this.npcDialogSystem) {
-            this.npcDialogSystem.update(dtSec, {
-                deathCount: this.eventTracker.getDeathCount(),
-                idleTime: this.eventTracker.getIdleTime(),
-                score: 0
-            });
-        }
+    if (this.eventTracker && typeof this.eventTracker.update === "function") {
+      this.eventTracker.update(dtSec, this.player);
+    }
+    if (this.aiRuleEngine) {
+      if (typeof this.aiRuleEngine.update === "function") {
+        this.aiRuleEngine.update(dtSec);
+      }
+      if (typeof this.aiRuleEngine.checkTriggers === "function") {
+        this.aiRuleEngine.checkTriggers();
+      }
+    }
+    if (this.uiManager) {
+      if (typeof this.uiManager.update === "function") {
+        this.uiManager.update(dtSec);
+      }
+      if (
+        typeof this.uiManager.updateStats === "function" &&
+        this.eventTracker &&
+        typeof this.eventTracker.getIdleTime === "function" &&
+        typeof this.eventTracker.getFallCount === "function"
+      ) {
+        this.uiManager.updateStats(
+          this.eventTracker.getIdleTime(),
+          this.eventTracker.getFallCount(),
+        );
+      }
+    }
+
+    if (
+      this.npcDialogSystem &&
+      typeof this.npcDialogSystem.update === "function" &&
+      this.eventTracker &&
+      typeof this.eventTracker.getIdleTime === "function" &&
+      typeof this.eventTracker.getFallCount === "function"
+    ) {
+      this.npcDialogSystem.update(dtSec, {
+        idleTime: this.eventTracker.getIdleTime(),
+        fallCount: this.eventTracker.getFallCount(),
+        score: 0,
+      });
+    }
 
     this.draw();
-    requestAnimationFrame(() => this.loop());
+    requestAnimationFrame((t) => this.loop(t));
   }
 
-  update() {
-    // Update các sàn di chuyển
-    this.platforms.forEach((platform) => platform.update(this.fixedDeltaTime, this.player));
-    // Update người chơi
-    this.player.update(this.input, this.platforms, 1920, 1080);
-    update() {
-        // Update các sàn di chuyển
-        this.platforms.forEach(platform => platform.update(this.player));
+  updateFixed(dtMs) {
+    // Platforms & player simulation in world coords
+    this.platforms.forEach((platform) => platform.update(dtMs, this.player));
+    this.player.update(this.input, this.platforms, this.mapWidth, this.mapHeight, dtMs);
 
-        // Update người chơi
-        this.player.update(this.input, this.platforms, this.mapWidth, this.mapHeight);
-
-        // Update camera to follow player
-        this.camera.update(this.player);
-
-    // Update AI (để hiển thị thông báo nếu có)
-    this.aiRuleEngine.update();
+    // Camera follows player
+    this.camera.update(this.player);
   }
 
   draw() {
-    // Xóa màn hình
-    this.ctx.clearRect(0, 0, 1920, 1080);
-    draw() {
-        // Xóa màn hình
-        this.ctx.clearRect(0, 0, this.viewportWidth, this.viewportHeight);
+    this.ctx.clearRect(0, 0, this.viewportWidth, this.viewportHeight);
 
-    // Vẽ nền (tùy chọn)
-    // this.ctx.fillStyle = "#222";
-    // this.ctx.fillRect(0, 0, 1920, 1080);
-        // Vẽ nền (tùy chọn)
-        // this.ctx.fillStyle = "#222";
-        // this.ctx.fillRect(0, 0, this.viewportWidth, this.viewportHeight);
+    // Platforms (only visible)
+    this.platforms.forEach((platform) => {
+      if (this.camera.isVisible(platform.x, platform.y, platform.w, platform.h)) {
+        platform.draw(this.ctx, this.camera);
+      }
+    });
 
-    // Vẽ sàn
-    this.platforms.forEach((platform) => platform.draw(this.ctx));
-
-        // AI & UI: once per frame with real time (eventTracker idle, aiRuleEngine cooldown, stats)
-        const dtSec = frameTime / 1000;
-        this.eventTracker.update(dtSec, this.player);
-        this.aiRuleEngine.update(dtSec);
-        this.aiRuleEngine.checkTriggers();
-        this.uiManager.update(dtSec);
-        this.uiManager.updateStats(this.eventTracker.getDeathCount(), this.eventTracker.getIdleTime());
-        
-        // Update NPC Dialog System (chỉ timer auto-close; trêu chọc do AIRuleEngine → npcTaunt)
-        if (this.npcDialogSystem) {
-            this.npcDialogSystem.update(dtSec, {
-                deathCount: this.eventTracker.getDeathCount(),
-                idleTime: this.eventTracker.getIdleTime(),
-                score: 0
-            });
-        }
-
-        this.draw();
-        requestAnimationFrame(() => this.loop());
-    }
-
-    update() {
-        // Update các sàn di chuyển
-        this.platforms.forEach(platform => platform.update(this.player));
-
-        // Update người chơi
-        this.player.update(this.input, this.platforms, this.mapWidth, this.mapHeight);
-
-        // Update camera to follow player
-        this.camera.update(this.player);
-
-        // Update AI (để hiển thị thông báo nếu có)
-        this.aiRuleEngine.update(); 
-    }
-
-    draw() {
-        // Xóa màn hình
-        this.ctx.clearRect(0, 0, this.viewportWidth, this.viewportHeight);
-
-        // Vẽ nền (tùy chọn)
-        // this.ctx.fillStyle = "#222";
-        // this.ctx.fillRect(0, 0, this.viewportWidth, this.viewportHeight);
-
-        // Vẽ sàn (chỉ những sàn hiện ra trên màn hình)
-        this.platforms.forEach(platform => {
-            if (this.camera.isVisible(platform.x, platform.y, platform.w, platform.h)) {
-                platform.draw(this.ctx, this.camera);
-            }
-        });
-
-        // Vẽ người chơi
-        this.player.draw(this.ctx, this.camera);
-    }
+    // Player
+    this.player.draw(this.ctx, this.camera);
+  }
 }
