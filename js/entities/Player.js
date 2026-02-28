@@ -46,22 +46,22 @@ export class Player {
 
         // CẤU HÌNH ANIMATION
         this.runImage = new Image();
-        this.runImage.src = '../../assets/Walk.png'; 
+        this.runImage.src = './Assets/Walk.png'; 
 
         this.idleImage = new Image();
-        this.idleImage.src = '../../assets/idle.png'; 
+        this.idleImage.src = './Assets/idle.png'; 
 
         this.jumpImage = new Image();
-        this.jumpImage.src = '../../assets/Jump.png'; 
+        this.jumpImage.src = './Assets/Jump.png'; 
 
         this.fallImage = new Image();
-        this.fallImage.src = '../../assets/Fall.png'; 
+        this.fallImage.src = './Assets/Fall.png'; 
         
         this.appearingImage = new Image();
-        this.appearingImage.src = '../../assets/Appearing (96x96).png'; 
+        this.appearingImage.src = './Assets/player_assets/Appearing (96x96).png'; 
 
         this.disappearingImage = new Image();
-        this.disappearingImage.src = '../../assets/Desappearing (96x96).png'; 
+        this.disappearingImage.src = './Assets/player_assets/Desappearing (96x96).png'; 
         
         this.frameX = 0;           
         
