@@ -25,44 +25,52 @@ export class Player {
         this.startY = y;
         this.x = x;
         this.y = y;
-        this.w = 30;
-        this.h = 30;
+        this.w = 70; // kích thước rộng của nhân vật
+        this.h = 70; // kích thước cao của nhân vật
         this.vx = 0;
         this.vy = 0;
         this.isGrounded = false;
         this.charge = 0;
         this.platformType = "air";
         this.facingRight = true;
-        this.eventTracker = eventTracker; 
+        this.eventTracker = eventTracker;
+        
+        // Track walk state to prevent event spam
+        this.isWalking = false;
+        this.lastWalkDirection = null; 
 
-        // ==========================================
+        this.isLanding = false; 
+        this.fallStunTimer = 0; // Biến đếm thời gian nằm bẹp
+        this.peakY = y;         
+
+
         // CẤU HÌNH ANIMATION
-        // ==========================================
         this.runImage = new Image();
-        this.runImage.src = './Assets/player_assets/Run (32x32).png';
+        this.runImage.src = '../../assets/Walk.png'; 
 
         this.idleImage = new Image();
-        this.idleImage.src = './Assets/player_assets/Idle (32x32).png';
+        this.idleImage.src = '../../assets/idle.png'; 
 
         this.jumpImage = new Image();
-        this.jumpImage.src = './Assets/player_assets/Jump (32x32).png';
+        this.jumpImage.src = '../../assets/Jump.png'; 
 
         this.fallImage = new Image();
-        this.fallImage.src = './Assets/player_assets/Fall (32x32).png';
+        this.fallImage.src = '../../assets/Fall.png'; 
         
         this.appearingImage = new Image();
-        this.appearingImage.src = './Assets/player_assets/Appearing (96x96).png';
+        this.appearingImage.src = '../../assets/Appearing (96x96).png'; 
 
         this.disappearingImage = new Image();
-        this.disappearingImage.src = './Assets/player_assets/Desappearing (96x96).png'; // Lưu ý đúng tên file của bạn
+        this.disappearingImage.src = '../../assets/Desappearing (96x96).png'; 
         
         this.frameX = 0;           
-        this.maxRunFrames = 12;    
-        this.maxIdleFrames = 11;   
-        this.maxJumpFrames = 1;    
-        this.maxFallFrames = 1;    
+        
+        this.maxRunFrames = 6;     
+        this.maxIdleFrames = 2;   
+        this.maxJumpFrames = 6;    
+        this.maxFallFrames = 6;    
         this.maxAppearingFrames = 7; 
-        this.maxDisappearingFrames = 7; // Thêm số frame cho Disappearing
+        this.maxDisappearingFrames = 7; 
         
         this.fps = 16;             
         this.frameInterval = 1000 / this.fps; 
@@ -79,21 +87,26 @@ export class Player {
         this.vy = 0;
         this.charge = 0;
         
-        // Reset lại animation appearing khi hồi sinh
         this.currentState = 'appearing';
         this.frameX = 0;
         this.frameTimer = 0;
         this.facingRight = true;
+        this.isLanding = false; 
+        this.fallStunTimer = 0; // Reset cả thời gian ngã
+        this.peakY = this.startY;
+        
+        // Reset walk state
+        this.isWalking = false;
+        this.lastWalkDirection = null;
     }
 
-    // GỌI HÀM NÀY KHI NHÂN VẬT CHẾT (Đụng quái, đụng gai...)
     die() {
         if (this.currentState !== 'disappearing') {
             this.currentState = 'disappearing';
             this.frameX = 0;
             this.frameTimer = 0;
             this.vx = 0;
-            this.vy = 0; // Đứng yên tại chỗ khi chết
+            this.vy = 0; 
             if (this.eventTracker) this.eventTracker.track('death');
         }
     }
@@ -108,11 +121,13 @@ export class Player {
         this.charge = 0;
         this.platformType = "air";
         
+        this.isLanding = false; 
+        this.fallStunTimer = 0;
+
         if (this.eventTracker) this.eventTracker.track('jump');
     }
 
     update(input, platforms, canvasWidth, canvasHeight, deltaTime = 16) {
-        // NẾU ĐANG CHẾT, ĐÓNG BĂNG VẬT LÝ VÀ CHỈ CHẠY ANIMATION
         if (this.currentState === 'disappearing') {
             this.updateAnimationOnly(deltaTime);
             return; 
@@ -123,38 +138,69 @@ export class Player {
             this.x += platformMovement;
         }
         
-        // KHÓA DI CHUYỂN NẾU ĐANG TRONG TRẠNG THÁI "APPEARING"
-        if (this.currentState !== 'appearing'&& this.platformType !== "slopeLeft" && this.platformType !== "slopeRight") {
+        if (this.currentState !== 'appearing') {
+            
+
+            // LOGIC NGẮT THỜI GIAN NGÃ BẰNG NÚT BẤM
+
+            if (this.isLanding) {
+                this.fallStunTimer -= deltaTime; // Trừ dần thời gian
+                
+                // Nếu hết 1 giây HOẶC người chơi bấm phím di chuyển/nhảy
+                if (this.fallStunTimer <= 0 || 
+                    input.keys["ArrowLeft"] || input.keys["KeyA"] || 
+                    input.keys["ArrowRight"] || input.keys["KeyD"] || 
+                    input.keys["Space"]) {
+                    
+                    this.isLanding = false; // Ngắt trạng thái ngã lập tức
+                    this.fallStunTimer = 0;
+                }
+            }
+            // ==========================================
+
             let accel = PHYSICS.accel;
             if (this.platformType === "ice") accel *= 0.1; 
 
             if (this.isGrounded) {
+                let isMoving = false;
+                let moveDirection = null;
+                
                 if (input.keys["ArrowLeft"] || input.keys["KeyA"]) {
                     this.vx -= accel;
                     this.facingRight = false;
+                    isMoving = true;
+                    moveDirection = 'left';
                 }
                 if (input.keys["ArrowRight"] || input.keys["KeyD"]) {
                     this.vx += accel;
                     this.facingRight = true;
+                    isMoving = true;
+                    moveDirection = 'right';
                 }
+                
+                // Only trigger walk event when starting to move or changing direction
+                if (isMoving && (!this.isWalking || this.lastWalkDirection !== moveDirection)) {
+                    if (this.eventTracker) this.eventTracker.track('walk', { direction: moveDirection });
+                    this.isWalking = true;
+                    this.lastWalkDirection = moveDirection;
+                } else if (!isMoving && this.isWalking) {
+                    // Stop walking when not moving
+                    this.isWalking = false;
+                    this.lastWalkDirection = null;
+                }
+            } else {
+                // Not grounded - stop walk tracking
+                this.isWalking = false;
             }
 
             if (input.keys["Space"] && this.isGrounded) {
                 this.charge = Math.min(this.charge + PHYSICS.jumpChargeSpeed, PHYSICS.maxJumpForce);
             }
         } else {
-            // KHI ĐANG TRÊN DỐC HOẶC ĐANG XUẤT HIỆN:
-            // Không cho gồng nhảy
-            this.charge = 0; 
-            
-            // Nếu là đang trượt dốc, ta KHÔNG nên nhân vx với 0.5 
-            // vì nó sẽ làm cản trở cái lực trượt 12px mà ta đã thiết lập ở dưới.
-            if (this.currentState === 'appearing') {
-                this.vx *= 0.5;
-            }
+            this.vx *= 0.5; 
+            this.charge = 0;
         }
 
-        // Vật lý cơ bản
         if (this.vx > PHYSICS.maxSpeed) this.vx = PHYSICS.maxSpeed;
         if (this.vx < -PHYSICS.maxSpeed) this.vx = -PHYSICS.maxSpeed;
 
@@ -198,7 +244,8 @@ export class Player {
             }
         });
 
-        // Va chạm Trục Y
+        let previousGrounded = this.isGrounded;
+
         this.y += this.vy;
         let foundGround = false; 
 
@@ -268,6 +315,33 @@ export class Player {
             this.platformType = "air";
         }
         
+        // KÍCH HOẠT HIỆU ỨNG NGÃ
+        if (!previousGrounded && this.isGrounded) {
+            let fallDistance = this.y - this.peakY;
+            let fallThreshold = canvasHeight / 2; 
+            
+            if (fallDistance > fallThreshold) {
+                this.isLanding = true;
+                this.fallStunTimer = 1000; // Thiết lập thời gian nằm bẹp 1 giây (1000ms)
+                this.currentState = 'fall';
+                
+                this.frameX = 4; // Nhảy thẳng đến frame đập mặt
+                this.frameTimer = 0;
+                this.vx = 0;
+                
+                if (this.eventTracker) this.eventTracker.track('land');
+            }
+            
+            this.peakY = this.y; 
+            
+        } else if (!this.isGrounded) {
+            if (this.y < this.peakY) {
+                this.peakY = this.y;
+            }
+        } else {
+            this.peakY = this.y;
+        }
+
         if (this.x < 0) {
             this.x = 0;
             this.vx = 0; 
@@ -277,23 +351,23 @@ export class Player {
             this.vx = 0;
         }
 
-        // Rớt hố thì gọi hàm die() thay vì reset ngay lập tức
         if (this.y > canvasHeight) {
             this.die();
         }
 
-        // Cập nhật Animation cho các trạng thái bình thường
         this.updateAnimationOnly(deltaTime);
     }
 
-    // Tách riêng logic xử lý khung hình để gọi lại cho gọn
     updateAnimationOnly(deltaTime) {
         let nextState = this.currentState;
         
         if (this.currentState !== 'appearing' && this.currentState !== 'disappearing') {
             if (!this.isGrounded) {
-                if (this.vy < 0) nextState = 'jump';
-                else nextState = 'fall';
+                this.isLanding = false; 
+                nextState = 'jump'; 
+            } 
+            else if (this.isLanding) {
+                nextState = 'fall'; 
             } 
             else if (Math.abs(this.vx) > 0.5) {
                 nextState = 'run';
@@ -325,8 +399,15 @@ export class Player {
                     this.currentState = 'idle';
                     this.frameX = 0;
                 } else if (this.currentState === 'disappearing') {
-                    // Nếu chạy xong hiệu ứng chết, reset lại nhân vật (sẽ tự động thành appearing)
                     this.reset(); 
+                } else if (this.currentState === 'fall') {
+                    if (this.isLanding) {
+                        // Nếu vẫn còn thời gian ngã, GIỮ ảnh ở frame cuối cùng (nằm bẹp)
+                        this.frameX = maxFrames - 1; 
+                    } else {
+                        // Đã hết thời gian ngã hoặc bị ngắt, reset frame
+                        this.frameX = 0;
+                    }
                 } else {
                     this.frameX = 0;
                 }
@@ -431,11 +512,15 @@ export class Player {
         if (this.charge > 0 && this.currentState !== 'appearing' && this.currentState !== 'disappearing') {
             ctx.fillStyle = "lime";
             ctx.beginPath();
-            ctx.arc(screenX + 15, screenY - 15, 5, 0, Math.PI * 2);
+            // Vẽ chấm tròn canh giữa, cách đỉnh đầu 15px
+            ctx.arc(centerX, screenY - 15, 5, 0, Math.PI * 2);
             ctx.fill();
             
             ctx.fillStyle = "yellow";
-            ctx.fillRect(screenX - 5, screenY - 10, (this.charge / PHYSICS.maxJumpForce) * 40, 5);
+            // Thanh sạc dài 40px, xê dịch sang trái 20px để căn giữa
+            let barWidth = 40;
+            let currentChargeWidth = (this.charge / PHYSICS.maxJumpForce) * barWidth;
+            ctx.fillRect(centerX - barWidth / 2, screenY - 10, currentChargeWidth, 5);
         }
-    }
+      }
 }

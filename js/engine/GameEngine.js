@@ -28,43 +28,109 @@ export class GameEngine {
             keys: {}
         };
 
-        this.setupInput();
+    // Quản lý Input
+    this.input = {
+      keys: {},
+    };
+
+    this.setupInput();
+  }
+
+  setupInput() {
+    window.addEventListener("keydown", (e) => {
+      this.input.keys[e.code] = true;
+      if (e.code === "Space" || e.code.startsWith("Arrow")) e.preventDefault();
+      this.eventTracker.onPlayerInput();
+    });
+
+    window.addEventListener("keyup", (e) => {
+      this.input.keys[e.code] = false;
+      this.eventTracker.onPlayerInput();
+      if (e.code === "Space") {
+        this.player.jump();
+      }
+    });
+  }
+
+  start() {
+    this.then = performance.now();
+    this.loop();
+  }
+
+  loop() {
+    const now = performance.now();
+    let frameTime = now - this.lastTime;
+    this.lastTime = now;
+
+    if (frameTime > 250) frameTime = 250;
+
+    this.accumulator += frameTime;
+
+    while (this.accumulator >= this.fixedDeltaTime) {
+      this.update();
+      this.accumulator -= this.fixedDeltaTime;
     }
 
-    setupInput() {
-        window.addEventListener("keydown", e => {
-            this.input.keys[e.code] = true;
-            if (e.code === "Space" || e.code.startsWith("Arrow")) e.preventDefault();
-            this.eventTracker.onPlayerInput();
-        });
-
-        window.addEventListener("keyup", e => {
-            this.input.keys[e.code] = false;
-            this.eventTracker.onPlayerInput();
-            if (e.code === "Space") {
-                this.player.jump();
-            }
-        });
-    }
-
-    start() {
-        this.then = performance.now();
-        this.loop();
-    }
-
-    loop() {
-        const now = performance.now();
-        let frameTime = now - this.lastTime;
-        this.lastTime = now;
-
-        if (frameTime > 250) frameTime = 250;
-
-        this.accumulator += frameTime;
-
-        while (this.accumulator >= this.fixedDeltaTime) {
-            this.update();
-            this.accumulator -= this.fixedDeltaTime;
+    // AI & UI: once per frame with real time (eventTracker idle, aiRuleEngine cooldown, stats)
+    const dtSec = frameTime / 1000;
+    this.eventTracker.update(dtSec, this.player);
+    this.aiRuleEngine.update(dtSec);
+    this.aiRuleEngine.checkTriggers();
+    this.uiManager.update(dtSec);
+    this.uiManager.updateStats(
+      this.eventTracker.getDeathCount(),
+      this.eventTracker.getIdleTime(),
+      this.eventTracker.getFallCount(),
+    );
+        
+        // Update NPC Dialog System (chỉ timer auto-close; trêu chọc do AIRuleEngine → npcTaunt)
+        if (this.npcDialogSystem) {
+            this.npcDialogSystem.update(dtSec, {
+                deathCount: this.eventTracker.getDeathCount(),
+                idleTime: this.eventTracker.getIdleTime(),
+                score: 0
+            });
         }
+
+    this.draw();
+    requestAnimationFrame(() => this.loop());
+  }
+
+  update() {
+    // Update các sàn di chuyển
+    this.platforms.forEach((platform) => platform.update(this.fixedDeltaTime, this.player));
+    // Update người chơi
+    this.player.update(this.input, this.platforms, 1920, 1080);
+    update() {
+        // Update các sàn di chuyển
+        this.platforms.forEach(platform => platform.update(this.player));
+
+        // Update người chơi
+        this.player.update(this.input, this.platforms, this.mapWidth, this.mapHeight);
+
+        // Update camera to follow player
+        this.camera.update(this.player);
+
+    // Update AI (để hiển thị thông báo nếu có)
+    this.aiRuleEngine.update();
+  }
+
+  draw() {
+    // Xóa màn hình
+    this.ctx.clearRect(0, 0, 1920, 1080);
+    draw() {
+        // Xóa màn hình
+        this.ctx.clearRect(0, 0, this.viewportWidth, this.viewportHeight);
+
+    // Vẽ nền (tùy chọn)
+    // this.ctx.fillStyle = "#222";
+    // this.ctx.fillRect(0, 0, 1920, 1080);
+        // Vẽ nền (tùy chọn)
+        // this.ctx.fillStyle = "#222";
+        // this.ctx.fillRect(0, 0, this.viewportWidth, this.viewportHeight);
+
+    // Vẽ sàn
+    this.platforms.forEach((platform) => platform.draw(this.ctx));
 
         // AI & UI: once per frame with real time (eventTracker idle, aiRuleEngine cooldown, stats)
         const dtSec = frameTime / 1000;

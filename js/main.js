@@ -1,3 +1,8 @@
+// ===== Global Error Handler =====
+window.addEventListener('error', (event) => {
+    console.error('❌ Error:', event.message);
+});
+
 import { GameEngine } from './engine/GameEngine.js';
 import { Player } from './entities/Player.js';
 import { Platform } from './entities/Platform.js';
@@ -8,6 +13,7 @@ import { APIKeyManager } from './systems/APIKeyManager.js';
 import { AICallLogic } from './systems/AICallLogic.js';
 import { UIManager } from './ui/UIManager.js';
 import { NPCDialogSystem } from './systems/NPCDialogSystem.js';
+import { SoundManager } from './systems/SoundManager.js';
 
 // ===== Initialize Modal Elements (AI/FE) =====
 const modal = document.getElementById('api-key-modal');
@@ -37,7 +43,7 @@ function setupCanvas() {
 setupCanvas();
 
 window.addEventListener('resize', () => {
-    console.log("Cửa sổ thay đổi, nhưng độ phân giải game vẫn là 1920x1080");
+    // Game resolution stays 1920x1080
 });
 
 // ===== Initialize Systems =====
@@ -47,6 +53,7 @@ const aiMessageGenerator = new AIMessageGenerator();
 const aiRuleEngine = new AIRuleEngine(aiMessageGenerator, eventTracker);
 const uiManager = new UIManager();
 const npcDialogSystem = new NPCDialogSystem(aiMessageGenerator);
+const soundManager = new SoundManager();
 
 // ===== Platforms (Dev_Game map: moving, broken, bouncy, ice, oneWay, fake) =====
 // [SỬA]: Đưa platforms và player ra ngoài để truy cập toàn cục, nhưng KHÔNG khởi tạo giá trị ngay
@@ -160,18 +167,18 @@ async function initGameSystems() {
     // 1. Chờ nạp Map xong
     await loadMap();
 
-        // 2. Sau khi có platforms mới tạo Player và Engine (kèm NPCDialogSystem để chạy typing + auto-close)
-        player = new Player(1550, 4320 - 150, eventTracker);
-        gameEngine = new GameEngine(
-            canvas,
-            ctx,
-            player,
-            platforms,
-            eventTracker,
-            aiRuleEngine,
-            uiManager,
-            npcDialogSystem
-        );
+    // 2. Sau khi có platforms mới tạo Player và Engine (kèm NPCDialogSystem để chạy typing + auto-close)
+    player = new Player(1550, 4320 - 150, eventTracker);
+    gameEngine = new GameEngine(
+        canvas,
+        ctx,
+        player,
+        platforms,
+        eventTracker,
+        aiRuleEngine,
+        uiManager,
+        npcDialogSystem
+    );
 
     // 3. Mở Modal cấu hình
     initGameWhenReady();
@@ -182,10 +189,11 @@ initGameSystems();
 
 // [SỬA]: Không tự động chạy startGame ngay lập tức, hãy để người dùng bấm nút
 function initGameWhenReady() {
-    modal.classList.remove('hidden'); // Hiện modal API lúc đầu
+    // Hiện modal API lúc đầu để người dùng nhập API, không tự động startGame
+    modal.classList.remove('hidden'); 
 }
 
-let gameStarted = true;
+let gameStarted = false;
 
 // ===== Modal Event Handlers =====
 testApiBtn.addEventListener('click', async () => {
@@ -264,6 +272,7 @@ async function startGame() {
         console.log('ℹ️ Using hardcoded AI messages (no API configured)');
     }
 
+    soundManager.playBackgroundMusic(currentScene);
     gameEngine.start();
 
     // Prefetch: dialogs (1 lần toàn game) + taunts (1 lần mỗi stage)
@@ -334,4 +343,33 @@ window.changeStage = function(stageName) {
     if (key) aiMessageGenerator.prefetchStageTaunts(key, { deathCount: eventTracker.getDeathCount() });
 };
 
-// (Demo buttons removed from game UI)
+// ===== Sound Manager Event Listeners =====
+// Track player's current scene for walking sounds
+let currentScene = 1;
+
+// Listen for game events and play appropriate sounds
+eventTracker.on('jump', () => {
+    soundManager.playJump();
+});
+
+eventTracker.on('land', () => {
+    soundManager.playFall();
+});
+
+eventTracker.on('walk', (data) => {
+    soundManager.playWalkSound(currentScene, data.direction);
+});
+
+eventTracker.on('bounce', () => {
+    soundManager.playJump();
+});
+
+eventTracker.on('conversation', () => {
+    soundManager.playConversation();
+});
+
+// Switch between scenes during gameplay
+window.switchScene = function(sceneNumber) {
+    currentScene = sceneNumber;
+    soundManager.playBackgroundMusic(sceneNumber);
+};

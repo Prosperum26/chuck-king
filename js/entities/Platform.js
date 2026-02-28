@@ -1,40 +1,63 @@
-// entities/Platform.js
 export class Platform {
-    constructor(x, y, w, h, type = "normal", range = 0, speed = 0) {
+    // Sử dụng param1, param2 để linh hoạt nhận data (range, speed) cho bục moving từ main.js
+    constructor(x, y, w, h, type = "normal", param1 = 0, param2 = 1) {
+        this.startX = x;
         this.x = x;
         this.y = y;
         this.w = w;
         this.h = h;
         this.type = type;
         
-        // Dành cho loại bục "moving"
-        this.range = range; 
-        this.speed = speed; 
-        this.startX = x;    
-        this.direction = 1; 
+        // --- Xử lý tham số riêng cho bục moving ---
+        if (this.type === "moving") {
+            this.range = param1; // Quãng đường di chuyển (ví dụ: 300)
+            this.speed = param2; // Tốc độ di chuyển (ví dụ: 2)
+            this.direction = 1;
+        } else {
+            this.speed = param1;
+            this.direction = param2;
+        }
 
-        // --- CẤU HÌNH BỤC VỠ ---
-        this.isBroken = false;     // Trạng thái: true là đã biến mất
-        this.isTriggered = false;  // Trạng thái: true là đã bắt đầu đếm ngược
-        this.breakTimer = 0;       // Đếm ngược thời gian để vỡ
-        this.respawnTimer = 0;     // Đếm ngược thời gian để hồi phục
+        // --- Xử lý ảnh gỗ và logic riêng của từng loại ---
+        this.isBroken = false; 
+        this.image = new Image();
+
+        if (this.type === "broken") {
+            // Wood 2: Bục vỡ sau khi chạm
+            this.image.src = "../assets/wood2.png";
+            
+            // --- Logic mới thay thế cho bục broken ---
+            this.isTriggered = false;  // Trạng thái: true là đã bắt đầu đếm ngược
+            this.breakTimer = 0;       // Đếm ngược thời gian để vỡ
+            this.respawnTimer = 0;     // Đếm ngược thời gian để hồi phục
+            
+        } else {
+            // Wood 1 và 3: Random cho các bục fake và real
+            // Lấy ngẫu nhiên tỷ lệ 50-50
+            const randomWood = Math.random() > 0.5 ? "../assets/wood3.png" : "../assets/wood.png";
+            this.image.src = randomWood;
+        }
     }
 
-    update(player) {
-        // --- Logic di chuyển (Moving Platform) ---
+    update(deltaTime, player) { 
+        // 1. Logic cho bục di chuyển
         if (this.type === "moving") {
             this.x += this.speed * this.direction;
-            if (Math.abs(this.x - this.startX) > this.range) {
-                this.direction *= -1;
+            
+            // Đảo chiều
+            if (this.x >= this.startX + this.range) {
+                this.x = this.startX + this.range;
+                this.direction = -1;
+            } else if (this.x <= this.startX) {
+                this.x = this.startX;
+                this.direction = 1;
             }
         }
 
-        // --- Logic bục vỡ (Broken Platform) ---
+        // 2. Logic cho bục wood 2 (broken)
         if (this.type === "broken") {
-            
-            // 1. Giai đoạn: BỤC ĐANG TỒN TẠI
+            // Giai đoạn 1: BỤC ĐANG TỒN TẠI
             if (!this.isBroken) {
-                
                 // A. Kích hoạt đếm ngược nếu Player chạm vào lần đầu
                 if (!this.isTriggered && player && player.standingOnPlatform === this) {
                     this.isTriggered = true;
@@ -60,8 +83,7 @@ export class Platform {
                     }
                 }
             } 
-            
-            // 2. Giai đoạn: BỤC ĐÃ VỠ (Đang tàng hình)
+            // Giai đoạn 2: BỤC ĐÃ VỠ (Đang tàng hình)
             else {
                 this.respawnTimer++;
                 
