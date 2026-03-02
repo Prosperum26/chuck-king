@@ -15,7 +15,7 @@ const PHYSICS = {
     minJumpForce: 12,     
     
     iceFriction: 0.98,
-    airResistance: 0.99,
+    airResistance: 1.0,
     bounceForce: 25
 };
 

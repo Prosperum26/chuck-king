@@ -46,18 +46,11 @@ export class Platform {
             : 1;
         // 1. Logic cho bục di chuyển
         if (this.type === "moving") {
-            this.x += this.speed * this.direction * frameFactor;
-            
-            // Đảo chiều
-            if (this.x >= this.startX + this.range) {
-                this.x = this.startX + this.range;
-                this.direction = -1;
-            } else if (this.x <= this.startX) {
-                this.x = this.startX;
-                this.direction = 1;
+            this.x += this.speed * this.direction;
+            if (Math.abs(this.x - this.startX) > this.range) {
+                this.direction *= -1;
             }
         }
-
         // 2. Logic cho bục wood 2 (broken)
         if (this.type === "broken") {
             // Giai đoạn 1: BỤC ĐANG TỒN TẠI
