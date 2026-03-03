@@ -6,6 +6,7 @@ window.addEventListener('error', (event) => {
 import { GameEngine } from './engine/GameEngine.js';
 import { Player } from './entities/Player.js';
 import { Platform } from './entities/Platform.js';
+import { HanChicken } from './entities/HanChicken.js';
 import { EventTracker } from './systems/EventTracker.js';
 import { AIRuleEngine } from './systems/AIRuleEngine.js';
 import { AIMessageGenerator } from './systems/AIMessageGenerator.js';
@@ -58,6 +59,7 @@ const soundManager = new SoundManager();
 // ===== Platforms (Dev_Game map: moving, broken, bouncy, ice, oneWay, fake) =====
 // [SỬA]: Đưa platforms và player ra ngoài để truy cập toàn cục, nhưng KHÔNG khởi tạo giá trị ngay
 let platforms = [];
+let npcs = [];
 let player = null;
 let gameEngine = null;
 
@@ -167,8 +169,12 @@ async function initGameSystems() {
     // 1. Chờ nạp Map xong
     await loadMap();
 
-    // 2. Sau khi có platforms mới tạo Player và Engine (kèm NPCDialogSystem để chạy typing + auto-close)
-    player = new Player(1550, 4320 - 150, eventTracker);
+    // 2. Khởi tạo NPCs 
+    const tileSize = 32;
+    npcs.push(new HanChicken(1600, 730)); // Vị trí tương đối trên map, sẽ được camera theo dõi
+
+    // 3. Sau khi có platforms mới tạo Player và Engine (kèm NPCDialogSystem để chạy typing + auto-close)
+    player = new Player(1550, 4320-150, eventTracker);
     gameEngine = new GameEngine(
         canvas,
         ctx,
@@ -177,10 +183,11 @@ async function initGameSystems() {
         eventTracker,
         aiRuleEngine,
         uiManager,
-        npcDialogSystem
+        npcDialogSystem,
+        npcs
     );
 
-    // 3. Mở Modal cấu hình
+    // 4. Mở Modal cấu hình
     initGameWhenReady();
 }
 
