@@ -331,7 +331,9 @@ export class Player {
                 this.frameTimer = 0;
                 this.vx = 0;
                 
-                if (this.eventTracker) this.eventTracker.track('land');
+                if (this.eventTracker){
+                    this.eventTracker.track('fall', {zone: 'hardLanding'}); 
+                }
             }
             
             this.peakY = this.y; 

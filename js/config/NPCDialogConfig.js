@@ -1,122 +1,116 @@
 /**
  * NPC / AI Dialog Config
- * Chứa toàn bộ nội dung default và prompt cho trêu chọc + dialog.
- * Chỉnh sửa file này để thay đổi lời NPC khi không dùng API hoặc thay đổi prompt gửi AI.
+ * Nội dung được cập nhật chính xác theo file Chuck King Story + Dialogue.docx
  */
 
 // ========================
-// TRÊU CHỌC (Taunt) - Default khi không có API
+// TRÊU CHỌC (Taunt) - Lời thoại của Sun (AI Sun)
 // Key: fall | idle | stuck
 // ========================
 export const DEFAULT_TAUNT_MESSAGES = {
     fall: [
-        "Lại rơi rồi à?",
-        "Giỏi quá nhỉ!",
-        "Lần thứ mấy rồi?",
-        "Cố gắng lên nào!",
-        "Dễ vậy mà không làm được?",
-        "Thật là tệ...",
-        "Lại rơi xuống à?",
-        "Chán quá đi!",
+        "No wonder you got replaced. Chu Than is bigger, stronger and better…",
+        "Wow, you are so COOKED. Maybe you would find better jobs opportunities at McDonald.",
+        "Put the fries in the bag, bro. You are loooong gone pass your prime.",
+        "My god, you suck. Becoming Hung's dinner would make you much more useful!",
+        "Again? Really? How many time is it already?",
+        "Welcome back, whaaaaat a surprise…",
+        "Dang, maybe you should give up. I am getting secondhand embarrassment watching you.",
+        "Words of wisdom, maybe don’t jump that way! How are you keep on failing!!!",
+        "Sheesh, what a failure!",
+        "No wonder you got cheated on! What a loser!",
+        "While you are at here failing, LNY and Chu Than are probably having the time of their live up there!",
+        "No surprise that you failed again. Chu Than is laughing up there!",
+        "LNY and Chu Than looks like an amazing couple! Better than you soon to be KFC garbage.",
     ],
     idle: [
-        "Đang làm gì đấy?",
-        "Ngủ rồi à?",
-        "Chơi hay không chơi?",
-        "Bỏ cuộc rồi à?",
-        "Còn sống không?",
-        "Động đậy đi chứ!",
+        "Why are you taking so long? If I were you, I would have made it to the top long ago! Are you even trying?",
+        "Tik Tok, Tik Tok. Chu Than would have made it up already.",
+        "Damn. Watching you climbing is so boring…",
+        "Booooo, why so sloooooow",
+        "Go on, jump. Are you afraid?",
+        "Chu Than would succeed this jump easily. I have no doubt.",
+        "Just jump, bro. You would fall anyway!",
+        "What are you waiting? The two up tops already kissing!",
+        "Hurry up! You would fail anyway, unlike my glorious Chu Than",
+        "Lol, waiting for what? Inevitable fails?",
     ],
     stuck: [
-        "Kẹt ở đây rồi à?",
-        "Lại rơi ở chỗ này nữa?",
-        "Học hỏi đi chứ!",
-        "Làm sao mà rơi hoài vậy?",
-        "Thử cách khác đi!",
-        "Ngu quá!",
+        "Sixty-Five Sheep, Sixty-Six Sheep, Six Seven! Sheep… Oh, you are back?",
+        "Wait, why are you climbing again? You can’t beat Chu Than.",
+        "You idiot, you would fail again.",
+        "Why bother even climbing anymore? What are you seeking at the top? You got betrayed, accept that!",
+        "Are you that desperate to see LNY and Chu Than acting lovey dovely again in front of you again?",
+        "Just accept your fate and become Hung’s dinner!",
+        "Don’t blame LNY, Chu Than is just better than you. She made the right choice!",
+        "It is raining cold here! Just make it to the top so I can do something else already!",
+        "First time is just pure luck; you won’t make it the second time.",
     ],
 };
 
-// Tên NPC hiển thị khi trêu chọc (trong hộp thoại)
-export const TAUNT_NPC_NAME = '😏 AI';
+// Tên NPC hiển thị
+export const TAUNT_NPC_NAME = '😏 Sun';
 
 // ========================
-// PROMPT TRÊU CHỌC (gửi API)
-// {{triggerDesc}} sẽ được thay bằng mô tả theo từng trigger (fall/idle/stuck)
+// TAUNT TRIGGER DESCRIPTIONS (Mô tả ngắn cho từng loại trigger)
 // ========================
-export const TAUNT_PROMPT_BASE = `Bạn là một NPC mỉa mai vô cùng cay đắng và tệ bạo trong game platformer. {{triggerDesc}} Hãy nói một câu ngắn (tối đa 15-20 từ) để trêu chọc và châm biếm người chơi một cách cơ cấu, đanh thép và vô duyên. Không giải thích, chỉ trả về câu nói ngắn gọn.`;
-
-// Mẫu mô tả context cho từng trigger. Placeholder: {{fallCount}}, {{idleTime}}, {{fallsInZone}}, {{lastFallZone}}
 export const TAUNT_TRIGGER_DESCRIPTIONS = {
-    fall: 'Người chơi vừa rơi lần thứ {{fallCount}}.',
-    idle: 'Người chơi đã không làm gì trong {{idleTime}} giây.',
-    stuck: 'Người chơi đã rơi {{fallsInZone}} lần ở khu vực "{{lastFallZone}}" và vẫn không thể vượt qua.',
+    fall: "The player fell! They have fallen {{fallCount}} times total and {{fallsInZone}} times in {{lastFallZone}} zone.",
+    idle: "The player has been idle for {{idleTime}} seconds. They are wasting time!",
+    stuck: "The player is stuck in {{lastFallZone}} zone after {{fallsInZone}} falls.",
 };
 
 // ========================
-// DIALOG (Intro, Stage 1-4, Ending) - Default khi không có API
+// TAUNT PROMPT BASE (Prompt chính để gửi lên API)
+// ========================
+export const TAUNT_PROMPT_BASE = `You are Sun, a sarcastic, mean-spirited talking sun in a video game. The player is an old rooster trying to climb a barn. Be rude, sarcastic, and mocking. Reference the player's failures, his lost love LNY, and his rival Chu Than. Keep responses short and punchy (1-2 sentences). Use English or Vietnamese.
+
+Situation: {{triggerDesc}}
+
+Now taunt the player:`;
+
+// ========================
+// DIALOG MẶC ĐỊNH (Cốt truyện chính)
 // ========================
 export const DEFAULT_DIALOGS = {
     intro: {
-        npcName: '👾 Game Master',
+        npcName: 'Story',
         dialogs: [
-            "Chào mừng tới Chuck King!",
-            "Công việc của bạn là thoát khỏi mê cung 8-bit này!",
-            "Xuyên qua các sàn, thẻ, và vượt qua những thách thức...",
-            "Bạn sẵn sàng chưa? Hãy bắt đầu!"
+            "As dawn broke through the starry night sky, a rooster crow resounded across the farmland.",
+            "The rooster crow itself is loud and clear. On the other hand, it also contained a feeling of melancholic finality.",
+            "Today is the day Player is destined to become fried chicken.",
+            "Player doesn’t want to be killed. Player wants to crow more.",
+            "So, Player decides to climb the barn to fulfill his dream once more!",
         ],
     },
-    stage1: {
-        npcName: '😊 NPC Hỗ Trợ',
+    meetingLNY: {
+        npcName: 'Sun',
         dialogs: [
-            "Tốt lắm! Bạn bắt đầu rất tốt!",
-            "Tiếp tục nhảy, tránh từng cái bẫy...",
-            "Mỗi bước là gần tới chiến thắng hơn!"
+            "Wow, you actually did it… how lucky.",
+            "LOL! LMAO! ROFL! OMG! DAMN! JAJA! =))",
+            "No wonder! LNY got on top of the barn not to mourn for you but to cheat with Chu Than!!!",
         ],
     },
-    stage2: {
-        npcName: '🤔 AI Thách Thức',
+    beforeBoss: {
+        npcName: 'Sun',
         dialogs: [
-            "Ồ, nó trở nên khó khăn rồi!",
-            "Các sàn đang di chuyển... Bạn có theo kịp không?",
-            "Tôi đoán bạn sẽ phải cố gắng hơn..."
-        ],
-    },
-    stage3: {
-        npcName: '😈 Ma Quỷ Thách Thức',
-        dialogs: [
-            "Bây giờ đã vào cấp độ khó đấy!",
-            "Các sàn băng, sàn giả, mọi thứ sẽ rơi...",
-            "Hehe... bạn sẽ rơi bao nhiêu lần nhỉ?"
-        ],
-    },
-    stage4: {
-        npcName: '👑 Boss Cuối Cùng',
-        dialogs: [
-            "CUỐI CÙNG... chúng ta gặp nhau!",
-            "Đây là sàn khó nhất của tất cả!",
-            "Nếu bạn vượt qua được cái này, bạn sẽ là CHUCK KING!"
+            "LOL, prepare to get a beating from Chu Than, you nobody. I warned you before.",
         ],
     },
     ending: {
-        npcName: '🎉 Bình Luận Viên',
+        npcName: 'Sun',
         dialogs: [
-            "TUYỆT VỜI! Bạn đã làm được!",
-            "Bạn chính thức là CHUCK KING rồi!",
-            "Hãy chơi lại để chinh phục các cấp độ khác!"
+            "Okay I admit, you are pretty good. Kinda good.",
+            "Well, now that Chu Than and LNY are gone, maybe Hung wouldn’t turn you to KFC. Congrats!",
         ],
     },
 };
 
 // ========================
-// PROMPT DIALOG (gửi API cho intro / stage1-4 / ending)
-// Mỗi key một prompt; AI trả về nhiều dòng (mỗi câu một dòng)
+// PROMPT DIALOG (Dành cho API)
 // ========================
 export const DIALOG_PROMPTS = {
-    intro: `Bạn là Game Master của game platformer Chuck King. Viết 3-4 câu ngắn chào mừng và hướng dẫn người chơi (tiếng Việt). Mỗi câu trên một dòng, không đánh số, không markdown.`,
-    stage1: `Bạn là NPC hỗ trợ trong game platformer. Người chơi vừa vào stage 1 (dễ). Viết 2-3 câu khích lệ ngắn (tiếng Việt). Mỗi câu một dòng.`,
-    stage2: `Bạn là NPC thách thức trong game platformer. Người chơi đang ở stage 2 (trung bình). Viết 2-3 câu thách thức ngắn (tiếng Việt). Mỗi câu một dòng.`,
-    stage3: `Bạn là NPC ma quỷ trong game platformer. Người chơi đang ở stage 3 (khó). Viết 2-3 câu đe dọa/khó (tiếng Việt). Mỗi câu một dòng.`,
-    stage4: `Bạn là Boss cuối cùng trong game platformer. Người chơi đang ở stage 4 (boss). Viết 2-3 câu hùng hồn (tiếng Việt). Mỗi câu một dòng.`,
-    ending: `Bạn là bình luận viên game. Người chơi vừa chiến thắng Chuck King. Viết 2-3 câu chúc mừng (tiếng Việt). Mỗi câu một dòng.`,
+    intro: "You are Sun, a sarcastic talking sun. The player is an old rooster. Mention he is about to become KFC because Chu Than is better. Use Vietnamese.",
+    climbing: "You are Sun. The player is climbing the barn. Remind him of LNY's betrayal and mock his slow progress. Use Vietnamese.",
+    ending: "You are Sun. The player defeated Chu Than. Admit his skill reluctantly with a sarcastic tone. Use Vietnamese.",
 };
