@@ -7,6 +7,8 @@
 Repo này hiện vẫn đang được phát triển.  
 Tính năng, cấu trúc và nội dung có thể thay đổi.
 
+nhóm trưởng béo vl
+
 ## 🎮 Game là gì?
 
 **Chuck King** là một game platformer 2D màn hình dọc, lấy cảm hứng từ Jump King. Người chơi điều khiển một nhân vật phải nhảy lên các platform để leo lên cao. Game có cơ chế **charge jump** - giữ phím để tích lực nhảy, thả phím để nhảy.
