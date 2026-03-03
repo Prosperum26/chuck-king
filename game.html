@@ -1,18 +1,20 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>Chuck King - AI Rage Game</title>
-    <link rel="stylesheet" href="styles/main.css">
-</head>
+    <link rel="stylesheet" href="styles/main.css" />
+  </head>
 
-
-<body>
-    <!-- API Key Input Modal (ẩn khi load, chỉ mở khi bấm nút ⚙️ API) -->
+  <body style="display: flex; align-items: center; justify-content: center;">
+    <!-- Auto-start game when page loads, show API modal only when requested -->
     <div id="api-key-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -116,12 +118,12 @@
                 <button id="mute-ai-btn" class="control-btn">🔇 Mute AI</button>
             </div>
             <div id="stats">
-                <div>Deaths: <span id="death-count">0</span></div>
                 <div>Idle: <span id="idle-time">0.0s</span></div>
+                <div>Falls: <span id="fall-count">0</span></div>
             </div>
         </div>
     </div>
-    
+
     <script type="module" src="./js/main.js"></script>
-</body>
+  </body>
 </html>

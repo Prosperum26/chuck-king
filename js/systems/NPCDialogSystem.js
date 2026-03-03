@@ -37,7 +37,7 @@ export class NPCDialogSystem {
     }
 
     setupEventListeners() {
-        // Trêu chọc: AI (death/idle/stuck) gửi qua event → hiển thị trong cùng NPC box
+        // Trêu chọc: AI (fall/idle/stuck) gửi qua event → hiển thị trong cùng NPC box
         window.addEventListener('npcTaunt', (e) => {
             const { message, npcName } = e.detail || {};
             if (message) this.showTaunt(npcName || '😏 AI', message);

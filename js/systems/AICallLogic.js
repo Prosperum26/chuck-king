@@ -74,22 +74,22 @@ Yêu cầu:
     }
 
     /**
-     * Generate danh sách câu rage (10-20 câu) dựa trên stage và số lần chết.
+     * Generate danh sách câu rage (10-20 câu) dựa trên stage và số lần rơi.
      * @param {string} apiKey - OpenAI API key
      * @param {string} endpoint - API endpoint
      * @param {number} stage - Game stage number
-     * @param {number} deathCount - Số lần người chơi đã rơi/chết
+     * @param {number} fallCount - Số lần người chơi đã rơi
      * @param {string} model - AI model name
      * @returns {Promise<{success: boolean, message: string, rages?: string[], error?: string}>}
      */
-    static async generateRage(apiKey, endpoint, stage, deathCount = 0, model = 'gpt-3.5-turbo') {
+    static async generateRage(apiKey, endpoint, stage, fallCount = 0, model = 'gpt-3.5-turbo') {
         const validation = this.validateInput(apiKey, endpoint);
         if (!validation.valid) {
             return { success: false, message: validation.error };
         }
 
         const stageDesc = stage >= 1 && stage <= 10 ? `Stage ${stage}` : `Stage ${stage} (khó)`;
-        const prompt = `Bạn là NPC mỉa mai trong game platformer. Hiện tại: ${stageDesc}, người chơi đã chết/rơi ${deathCount} lần.
+        const prompt = `Bạn là NPC mỉa mai trong game platformer. Hiện tại: ${stageDesc}, người chơi đã rơi ${fallCount} lần.
 Trả về ĐÚNG một JSON array gồm 10 đến 20 câu trêu chọc/mỉa mai (độ dài mỗi câu khác nhau: có câu ngắn 5-8 từ, có câu dài 12-20 từ). Mỗi phần tử là một câu tiếng Việt. Châm biếm, cay cú về stage hoặc kỹ năng người chơi.
 Chỉ trả về JSON array thuần, không markdown không giải thích. Ví dụ: ["Câu 1.","Câu 2 ngắn.","Câu 3 dài hơn một chút."]`;
 

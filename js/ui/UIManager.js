@@ -1,24 +1,20 @@
 /**
- * UIManager - Stats và overlay (NPC dialog do NPCDialogSystem quản lý)
+ * UIManager - Stats HUD (NPC dialog do NPCDialogSystem quản lý)
  */
 export class UIManager {
-    constructor() {
-        this.deathCountDisplay = document.getElementById('death-count');
-        this.idleTimeDisplay = document.getElementById('idle-time');
-        this.setupEventListeners();
-    }
+  constructor() {
+    this.idleTimeDisplay = document.getElementById("idle-time");
+    this.fallCountDisplay = document.getElementById("fall-count");
+  }
 
-    setupEventListeners() {
-        // Không còn aiMessage; trêu chọc hiển thị qua NPCDialogSystem (npcTaunt)
+  update(dt) {
+    // reserved for future UI effects
+  }
+
+  updateStats(idleTime, fallCount = 0) {
+    this.idleTimeDisplay.textContent = idleTime.toFixed(1) + "s";
+    if (this.fallCountDisplay) {
+      this.fallCountDisplay.textContent = fallCount;
     }
-    
-    update(dt) {
-        // Reserved for future UI timers
-    }
-    
-    updateStats(deathCount, idleTime) {
-        if (this.deathCountDisplay) this.deathCountDisplay.textContent = deathCount;
-        if (this.idleTimeDisplay) this.idleTimeDisplay.textContent = idleTime.toFixed(1) + 's';
-    }
+  }
 }
-

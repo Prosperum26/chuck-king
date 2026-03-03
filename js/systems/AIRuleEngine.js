@@ -2,8 +2,8 @@
  * AIRuleEngine - Rule-based system để decide khi nào AI nên react
  * 
  * Triggers (Priority order):
- * 1. STUCK (Cao nhất): Người chơi chết ≥ 3 lần ở cùng một khu vực
- * 2. DEATH (Trung): Người chơi vừa chết
+ * 1. STUCK (Cao nhất): Người chơi rơi ≥ 3 lần ở cùng một khu vực
+ * 2. FALL (Trung): Người chơi vừa rơi khỏi map
  * 3. IDLE (Thấp nhất): Không nhấn phím > 12 giây
  */
 export class AIRuleEngine {
@@ -38,21 +38,21 @@ export class AIRuleEngine {
         const context = this.eventTracker.getContext();
         let triggerType = null;
         
-        // Priority 1: STUCK - Chết ≥ 3 lần ở cùng một khu vực (Cao nhất)
-        if (context.lastDeathZone) {
-            const deathsInZone = this.eventTracker.getDeathCountInZone(context.lastDeathZone);
-            if (deathsInZone >= 3 && this.lastStuckZone !== context.lastDeathZone) {
+        // Priority 1: STUCK - Rơi ≥ 3 lần ở cùng một khu vực (Cao nhất)
+        if (context.lastFallZone) {
+            const fallsInZone = this.eventTracker.getFallCountInZone(context.lastFallZone);
+            if (fallsInZone >= 3 && this.lastStuckZone !== context.lastFallZone) {
                 triggerType = 'stuck';
-                this.lastStuckZone = context.lastDeathZone;
-                console.log(`🎯 STUCK trigger: Chết ${deathsInZone} lần ở zone ${context.lastDeathZone}`);
+                this.lastStuckZone = context.lastFallZone;
+                console.log(`🎯 STUCK trigger: Rơi ${fallsInZone} lần ở zone ${context.lastFallZone}`);
             }
         }
         
-        // Priority 2: DEATH - Người chơi vừa chết (Trung)
-        if (!triggerType && this.eventTracker.hasJustDied()) {
-            triggerType = 'death';
-            this.eventTracker.markDeathAsTriggered();
-            console.log(`💀 DEATH trigger: Lần chết thứ ${context.deathCount}`);
+        // Priority 2: FALL - Người chơi vừa rơi (Trung)
+        if (!triggerType && this.eventTracker.hasJustFallen()) {
+            triggerType = 'fall';
+            this.eventTracker.markFallAsTriggered();
+            console.log(`🕳️ FALL trigger: Lần rơi thứ ${context.fallCount}`);
         }
         
         // Priority 3: IDLE - Không nhấn phím > 12 giây (Thấp)

@@ -11,11 +11,14 @@ Tính năng, cấu trúc và nội dung có thể thay đổi.
 
 **Chuck King** là một game platformer 2D màn hình dọc, lấy cảm hứng từ Jump King. Người chơi điều khiển một nhân vật phải nhảy lên các platform để leo lên cao. Game có cơ chế **charge jump** - giữ phím để tích lực nhảy, thả phím để nhảy.
 
-Điểm đặc biệt của game là hệ thống **AI Rage System** - một NPC mỉa mai sẽ trêu chọc người chơi khi họ chết, idle quá lâu, hoặc bị kẹt ở một khu vực.
+Điểm đặc biệt của game là hệ thống **AI Rage System** - một NPC mỉa mai sẽ trêu chọc người chơi khi họ rơi, idle quá lâu, hoặc bị kẹt ở một khu vực.
 
 ## 🚀 Cách chạy
 
-Bạn có thể trải nghiệm trực tiếp qua link website ở phần Mô tả!
+- **Local dev (khuyến nghị)**:
+  - Chạy một static HTTP server (VD: VSCode Live Server, `npx serve`, `python -m http.server`...), **không** mở file bằng `file://` vì game dùng `fetch()` để load map JSON.
+  - Mở `index.html` → màn hình menu, nhập tên → bấm **GET READY!** để vào `game.html`.
+- **Deploy**: có thể deploy nguyên thư mục lên bất kỳ static hosting nào (GitHub Pages, Vercel, Netlify, v.v.).
 
 ### Controls
 
@@ -34,13 +37,17 @@ js/
 │   └── GameEngine.js      # Game loop, rendering, input handling
 ├── entities/
 │   ├── Player.js          # Nhân vật với physics và jump charge
-│   └── Platform.js        # Platform tĩnh
+│   └── Platform.js        # Các loại platform (normal, moving, ice, bouncy, broken, slope, ...)
 ├── systems/
-│   ├── EventTracker.js    # Theo dõi hành vi người chơi
+│   ├── Camera.js          # Camera / viewport cho map dọc 4320px
+│   ├── EventTracker.js    # Theo dõi hành vi người chơi (fall, idle, walk, land, bounce, ...)
 │   ├── AIRuleEngine.js    # Rule engine quyết định khi nào AI phản ứng
-│   └── AIMessageGenerator.js  # Tạo message AI (hardcoded + API)
+│   ├── AIMessageGenerator.js  # Tạo message AI (hardcoded + API)
+│   ├── NPCDialogSystem.js # Hộp thoại NPC + hiển thị taunt từ AI
+│   ├── SoundManager.js    # Nhạc nền + hiệu ứng âm thanh (jump, walk, fall, conversation)
+│   └── APIKeyManager.js   # Quản lý/lưu cấu hình AI API trên UI
 └── ui/
-    └── UIManager.js       # Quản lý UI overlay (dialog, stats)
+    └── UIManager.js       # HUD stats đơn giản (Idle time, Fall count)
 ```
 
 ## Hệ thống AI hoạt động thế nào?
@@ -48,22 +55,22 @@ js/
 ### Event Tracking
 
 Game theo dõi các sự kiện sau:
-- **deathCount**: Số lần người chơi chết
+- **fallCount**: Số lần người chơi rơi khỏi map
 - **idleTime**: Thời gian không có input (giây)
-- **lastDeathZone**: Khu vực chết lần cuối (`top`, `mid`, `bottom`)
-- **deathZones**: Map đếm số lần chết theo từng zone
+- **lastFallZone**: Khu vực rơi lần cuối (`top`, `mid`, `bottom`)
+- **fallZones**: Map đếm số lần rơi theo từng zone
 
 ### AI Triggers (Rule-based)
 
 AI sẽ phản ứng khi:
 
-1. **Death Trigger**: Người chơi chết
+1. **Fall Trigger**: Người chơi rơi khỏi map
 2. **Idle Trigger**: Không có input > 12 giây
-3. **Stuck Trigger**: Chết ≥ 3 lần ở cùng một zone
+3. **Stuck Trigger**: Rơi ≥ 3 lần ở cùng một zone
 
 ### Cooldown System
 
-- Sau mỗi lần AI nói, có cooldown **6 giây** trước khi có thể trigger lại
+- Sau mỗi lần AI nói, có cooldown **5 giây** trước khi có thể trigger lại
 - Tránh spam message
 
 ### AI Message Generation
@@ -71,7 +78,7 @@ AI sẽ phản ứng khi:
 #### 1. Hardcoded Messages (Fallback)
 
 Mặc định game sử dụng danh sách câu trêu chọc hardcoded theo từng trigger type:
-- `death`: Câu khi chết
+- `fall`: Câu khi rơi
 - `idle`: Câu khi idle
 - `stuck`: Câu khi bị kẹt
 
@@ -113,7 +120,7 @@ aiGenerator.setAPIEndpoint('https://your-ai-api.com/generate', 'your-api-key');
 
 **Prompt Template:**
 - AI được mô tả là NPC mỉa mai, cay đắng
-- Context về trigger (death count, idle time, stuck zone)
+- Context về trigger (fall count, idle time, stuck zone)
 - Yêu cầu: Câu ngắn ≤ 15 từ, có thể mỉa mai sâu cay
 
 **Fallback:**
@@ -126,10 +133,10 @@ aiGenerator.setAPIEndpoint('https://your-ai-api.com/generate', 'your-api-key');
 
 ```javascript
 {
-  deathCount: 5,
+  fallCount: 5,
   idleTime: 12.5,
-  lastDeathZone: "mid",
-  deathZones: {
+  lastFallZone: "mid",
+  fallZones: {
     "top": 1,
     "mid": 3,
     "bottom": 1
@@ -141,7 +148,7 @@ aiGenerator.setAPIEndpoint('https://your-ai-api.com/generate', 'your-api-key');
 
 - **Message**: String ngắn (≤ 15 từ)
 - **Display**: Hiển thị trong AI dialog box 3 giây
-- **Cooldown**: 6 giây trước khi có thể trigger lại
+- **Cooldown**: 5 giây trước khi có thể trigger lại
 
 ## 🔧 Hướng mở rộng trong tương lai
 
@@ -161,14 +168,14 @@ aiGenerator.setAPIEndpoint('https://your-ai-api.com/generate', 'your-api-key');
 
 ### Event Tracking
 - [ ] Track thêm metrics: jump attempts, platform touches
-- [ ] Heatmap của deaths
+- [ ] Heatmap vị trí rơi (falls)
 - [ ] Export analytics data
 - [ ] A/B testing với AI prompts khác nhau
 
 ### UI/UX
 - [ ] Settings menu
 - [ ] Tutorial/instructions
-- [ ] Sound effects, background music
+- [ ] Nâng cấp thêm sound effects, background music (hiện đã có bản cơ bản)
 - [ ] Responsive design cho mobile
 
 ### Technical
