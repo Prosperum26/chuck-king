@@ -14,7 +14,7 @@ import {
 import { callLLMText } from './LLMClient.js';
 
 /** Dialog type keys */
-export const DIALOG_TYPES = ['intro', 'greeting', 'stage1', 'stage2', 'stage3', 'stage4', 'ending'];
+export const DIALOG_TYPES = ['intro', 'stage1', 'stage2', 'stage3', 'ending'];
 
 export class AIMessageGenerator {
     constructor() {

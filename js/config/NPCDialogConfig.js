@@ -5,7 +5,7 @@
 
 // ========================
 // TRÊU CHỌC (Taunt) - Lời thoại của Sun (AI Sun)
-// Key: fall | idle | stuck
+// Key: fall | idle
 // ========================
 export const DEFAULT_TAUNT_MESSAGES = {
     fall: [
@@ -22,6 +22,11 @@ export const DEFAULT_TAUNT_MESSAGES = {
         "While you are at here failing, LNY and Chu Than are probably having the time of their live up there!",
         "No surprise that you failed again. Chu Than is laughing up there!",
         "LNY and Chu Than looks like an amazing couple! Better than you soon to be KFC garbage.",
+        "Sixty-Five Sheep, Sixty-Six Sheep, Six Seven! Sheep… Oh, you are back?",
+        "You idiot, you would fail again.",
+        "Are you that desperate to see LNY and Chu Than acting lovey dovely again in front of you again?",
+        "Don’t blame LNY, Chu Than is just better than you. She made the right choice!",
+        "First time is just pure luck; you won’t make it the second time.",
     ],
     idle: [
         "Why are you taking so long? If I were you, I would have made it to the top long ago! Are you even trying?",
@@ -34,17 +39,10 @@ export const DEFAULT_TAUNT_MESSAGES = {
         "What are you waiting? The two up tops already kissing!",
         "Hurry up! You would fail anyway, unlike my glorious Chu Than",
         "Lol, waiting for what? Inevitable fails?",
-    ],
-    stuck: [
-        "Sixty-Five Sheep, Sixty-Six Sheep, Six Seven! Sheep… Oh, you are back?",
         "Wait, why are you climbing again? You can’t beat Chu Than.",
-        "You idiot, you would fail again.",
         "Why bother even climbing anymore? What are you seeking at the top? You got betrayed, accept that!",
-        "Are you that desperate to see LNY and Chu Than acting lovey dovely again in front of you again?",
         "Just accept your fate and become Hung’s dinner!",
-        "Don’t blame LNY, Chu Than is just better than you. She made the right choice!",
         "It is raining cold here! Just make it to the top so I can do something else already!",
-        "First time is just pure luck; you won’t make it the second time.",
     ],
 };
 
@@ -102,20 +100,6 @@ export const DEFAULT_DIALOGS = {
             "My guess is that she is waiting for you, so don’t let a woman… don’t let a hen hanging like that!",
             "Go! Relive your glory, {{playerName}}. I will be here to accompany you on your journey!",
             "Ah, so this marks the beginning of a triumphant ending. A journey of the great {{playerName}} to find his closure!",
-        ],
-    },     
-    meetingLNY: {
-        npcName: 'Sun',
-        dialogs: [
-            "Wow, you actually did it… how lucky.",
-            "LOL! LMAO! ROFL! OMG! DAMN! JAJA! =))",
-            "No wonder! LNY got on top of the barn not to mourn for you but to cheat with Chu Than!!!",
-        ],
-    },
-    beforeBoss: {
-        npcName: 'Sun',
-        dialogs: [
-            "LOL, prepare to get a beating from Chu Than, you nobody. I warned you before.",
         ],
     },
     ending: {

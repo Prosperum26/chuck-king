@@ -8,6 +8,60 @@
     <meta http-equiv="Expires" content="0">
     <title>Chuck King - NPC Dialog Test</title>
     <link rel="stylesheet" href="styles/main.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f4f7fb 0%, #e2ecff 100%);
+            color: #1f2933;
+            overflow-y: auto;
+        }
+
+        .dialog-test-container {
+            max-width: 960px;
+            margin: 40px auto;
+            padding: 24px 28px 28px;
+            border-radius: 16px;
+            background: #ffffff;
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+        }
+
+        .dialog-test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .dialog-test-subtitle {
+            font-size: 0.9rem;
+            color: #4b5563;
+        }
+
+        .dialog-test-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .dialog-test-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .dialog-test-hint {
+            font-size: 0.8rem;
+            color: #6b7280;
+            max-width: 540px;
+        }
+
+        .api-mode-label {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-left: 8px;
+        }
+    </style>
 </head>
 <body>
     <!-- API Key Input Modal -->
@@ -96,7 +150,6 @@
                     <option value="stage1">Stage 1</option>
                     <option value="stage2">Stage 2</option>
                     <option value="stage3">Stage 3</option>
-                    <option value="stage4">Stage 4</option>
                     <option value="ending">Ending</option>
                 </select>
             </div>
