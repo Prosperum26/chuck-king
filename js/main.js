@@ -66,6 +66,7 @@ export const platformAssets = {
 // [SỬA]: Đưa platforms và player ra ngoài để truy cập toàn cục, nhưng KHÔNG khởi tạo giá trị ngay
 let platforms = [];
 let enemies = [];
+let npcs = [];
 let player = null;
 let gameEngine = null;
 
@@ -194,6 +195,7 @@ async function initGameSystems() {
 
     // 2. Khởi tạo NPCs 
     const tileSize = 32;
+    npcs = [];
     npcs.push(new HanChicken(1600, 730)); // Vị trí tương đối trên map, sẽ được camera theo dõi
 
     // 3. Sau khi có platforms mới tạo Player và Engine (kèm NPCDialogSystem để chạy typing + auto-close)
@@ -207,7 +209,8 @@ async function initGameSystems() {
         aiRuleEngine,
         uiManager,
         npcDialogSystem,
-        enemies
+        enemies,
+        npcs
     );
 
     // 4. Mở Modal cấu hình

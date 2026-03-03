@@ -10,7 +10,8 @@ export class GameEngine {
     aiRuleEngine,
     uiManager,
     npcDialogSystem = null,
-    enemies = []
+    enemies = [],
+    npcs = []
   ) {
     this.canvas = canvas;
     this.ctx = ctx;
