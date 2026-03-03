@@ -14,7 +14,7 @@ import {
 import { callLLMText } from './LLMClient.js';
 
 /** Dialog type keys */
-export const DIALOG_TYPES = ['intro', 'stage1', 'stage2', 'stage3', 'stage4', 'ending'];
+export const DIALOG_TYPES = ['intro', 'greeting', 'stage1', 'stage2', 'stage3', 'stage4', 'ending'];
 
 export class AIMessageGenerator {
     constructor() {
@@ -183,18 +183,31 @@ Ví dụ: ["Câu 1.","Câu 2.","Câu 3..."]`;
         }
 
         // Dialog AI: chỉ gọi 1 lần ở đầu game (prefetchAllDialogs). Ở đây chỉ dùng cache.
+        let dialogs = null;
+        let npcName = defaultData.npcName;
+        
         if (this.dialogPrefetchDone && this.prefetchedDialogs?.dialogsByType?.[dialogType]) {
-            const dialogs = this.prefetchedDialogs.dialogsByType[dialogType];
+            dialogs = this.prefetchedDialogs.dialogsByType[dialogType];
             if (dialogs && dialogs.length > 0) {
                 console.log(`[AIMessageGenerator] 🤖 AI(dialog:${dialogType}) from prefetched cache (${dialogs.length} lines)`);
-                return { npcName: this.prefetchedDialogs.npcName || defaultData.npcName, dialogs: [...dialogs] };
+                npcName = this.prefetchedDialogs.npcName || defaultData.npcName;
             }
         }
 
-        console.log(`[AIMessageGenerator] 💬 DEFAULT(dialog:${dialogType})`);
+        if (!dialogs) {
+            console.log(`[AIMessageGenerator] 💬 DEFAULT(dialog:${dialogType})`);
+            dialogs = [...defaultData.dialogs];
+        } else {
+            dialogs = [...dialogs];
+        }
+
+        // Replace {{playerName}} với tên người chơi từ localStorage
+        const playerName = localStorage.getItem('playerName') || 'Player';
+        dialogs = dialogs.map(line => line.replace(/{{playerName}}/g, playerName));
+
         return {
-            npcName: defaultData.npcName,
-            dialogs: [...defaultData.dialogs]
+            npcName: npcName,
+            dialogs: dialogs
         };
     }
 

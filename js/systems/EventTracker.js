@@ -91,7 +91,7 @@ export class EventTracker {
   }
 
   isIdle() {
-    return this.idleTime > 12;
+    return this.idleTime > 7;
   }
 
   canTriggerIdle() {

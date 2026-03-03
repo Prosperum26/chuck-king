@@ -17,10 +17,21 @@ export class NPCDialogSystem {
         this.dialogDuration = 3;
         this.fullText = '';
         this.charIndex = 0;
-        this.typingSpeed = 40; // chars per second
+        this.typingSpeed = 25; // chars per second (chậm hơn để đọc kịp)
         this.typingTimer = 0;
         this.maxChars = 260;
         this.isTyping = false;
+        
+        // Dialog queue - hiển thị từng dòng một
+        this.dialogQueue = [];
+        this.currentDialogLines = [];
+        this.currentDialogIndex = 0;
+        this.currentNPCName = '';
+        this.delayBetweenLines = 3000; // 3 giây (milliseconds)
+        this.dialogLineTimer = null;
+        
+        // Flag để biết dialog main (intro, stage, ending) có đang chạy không
+        this.isPlayingMainDialog = false;
 
         this.initializeDialogUI();
         this.setupEventListeners();
@@ -50,9 +61,22 @@ export class NPCDialogSystem {
 
     /**
      * Hiển thị một dòng trêu chọc (từ AIRuleEngine → AIMessageGenerator)
+     * Taunt sẽ dừng dialog queue hiện tại (nhưng không interrupt main dialog)
      */
     showTaunt(npcName, message) {
         if (!this.dialogBox || !this.dialogContent || !this.dialogNPCName) return;
+        
+        // Không show taunt nếu đang chạy main dialog (intro, stage, ending)
+        if (this.isPlayingMainDialog) return;
+        
+        // Dừng dialog queue nếu đang chạy
+        if (this.dialogLineTimer) {
+            clearTimeout(this.dialogLineTimer);
+            this.dialogLineTimer = null;
+        }
+        this.currentDialogLines = [];
+        this.currentDialogIndex = 0;
+        
         this.openDialogBox(npcName);
         this.startTyping(message);
         this.autoCloseTimer = this.dialogDuration;
@@ -61,9 +85,10 @@ export class NPCDialogSystem {
     /**
      * Hiển thị dialog theo key: intro | stage1 | stage2 | stage3 | stage4 | ending
      * Nội dung lấy từ AI (API) hoặc default
+     * Hiển thị từng dòng một, mỗi dòng cách nhau 2 giây
      */
     async showDialog(dialogKey) {
-        const allowed = ['intro', 'stage1', 'stage2', 'stage3', 'stage4', 'ending'];
+        const allowed = ['intro', 'greeting', 'stage1', 'stage2', 'stage3', 'stage4', 'ending'];
         if (!allowed.includes(dialogKey) || !this.aiMessageGenerator) {
             console.warn(`[NPCDialogSystem] Invalid dialog key or no AI: "${dialogKey}"`);
             return;
@@ -73,10 +98,16 @@ export class NPCDialogSystem {
         if (!data || !data.dialogs || data.dialogs.length === 0) return;
 
         this.currentStage = dialogKey;
-        this.openDialogBox(data.npcName);
-        const firstLine = data.dialogs[0];
-        this.startTyping(firstLine);
-        this.autoCloseTimer = this.dialogDuration;
+        this.currentNPCName = data.npcName;
+        this.currentDialogLines = data.dialogs;
+        this.currentDialogIndex = 0;
+        this.isPlayingMainDialog = true; // Đánh dấu đang chạy main dialog
+        
+        // Xóa timer cũ nếu có
+        if (this.dialogLineTimer) clearTimeout(this.dialogLineTimer);
+        
+        // Bắt đầu hiển thị dòng đầu tiên
+        this.showNextDialogLine();
     }
 
     onStageChange(stageName) {
@@ -86,12 +117,55 @@ export class NPCDialogSystem {
         if (key) this.showDialog(key);
     }
 
+    /**
+     * Hiển thị dòng tiếp theo trong dialog queue
+     */
+    showNextDialogLine() {
+        if (this.currentDialogIndex >= this.currentDialogLines.length) {
+            // Hết tất cả dòng - nếu là intro thì tự động chuyển sang greeting
+            this.dialogLineTimer = setTimeout(() => {
+                if (this.currentStage === 'intro') {
+                    // Tự động chuyển sang greeting sau intro
+                    this.showDialog('greeting');
+                } else {
+                    this.isPlayingMainDialog = false; // Dialog chính kết thúc
+                    this.closeDialog();
+                }
+            }, this.delayBetweenLines);
+            return;
+        }
+
+        const line = this.currentDialogLines[this.currentDialogIndex];
+        this.currentDialogIndex++;
+        
+        this.openDialogBox(this.currentNPCName);
+        this.startTyping(line);
+        
+        // Sau khi typing xong + delay, hiển thị dòng tiếp theo
+        const textLength = line.length;
+        const typingDuration = (textLength / this.typingSpeed) * 1000; // ms
+        
+        this.dialogLineTimer = setTimeout(() => {
+            this.showNextDialogLine();
+        }, typingDuration + this.delayBetweenLines);
+    }
+
     closeDialog() {
         this.isDialogOpen = false;
         this.isTyping = false;
         this.fullText = '';
         this.charIndex = 0;
         this.typingTimer = 0;
+        this.currentDialogIndex = 0;
+        this.currentDialogLines = [];
+        this.isPlayingMainDialog = false; // Reset flag
+        
+        // Xóa timer đang chạy
+        if (this.dialogLineTimer) {
+            clearTimeout(this.dialogLineTimer);
+            this.dialogLineTimer = null;
+        }
+        
         if (this.dialogBox) {
             this.dialogBox.classList.add('hidden');
             this.dialogBox.classList.remove('show');
