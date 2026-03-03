@@ -302,8 +302,13 @@ async function initGameSystems() {
     // 1. Chờ nạp Map xong
     await loadMap();
 
-    // 2. Sau khi có platforms mới tạo Player và Engine (kèm NPCDialogSystem để chạy typing + auto-close)
-    player = new Player(1550, 550, eventTracker);
+    // 2. Khởi tạo NPCs 
+    const tileSize = 32;
+    npcs = [];
+    npcs.push(new HanChicken(1600, 730)); // Vị trí tương đối trên map, sẽ được camera theo dõi
+
+    // 3. Sau khi có platforms mới tạo Player và Engine (kèm NPCDialogSystem để chạy typing + auto-close)
+    player = new Player(1550, 4320-150, eventTracker);
     gameEngine = new GameEngine(
         canvas,
         ctx,
