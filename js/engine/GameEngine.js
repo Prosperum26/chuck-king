@@ -32,6 +32,9 @@ export class GameEngine {
 
     this.camera = new Camera(this.mapWidth, this.mapHeight, this.viewportWidth, this.viewportHeight);
 
+    // Background element for parallax scrolling (will be lazy-loaded on first draw)
+    this.backgroundElement = null;
+
     // Fixed timestep physics (60fps)
     this.fixedDeltaTime = 1000 / 60;
     this.accumulator = 0;
@@ -164,6 +167,15 @@ export class GameEngine {
 
   draw() {
     this.ctx.clearRect(0, 0, this.viewportWidth, this.viewportHeight);
+
+    // Lazy-load background element on first draw
+    if (!this.backgroundElement) {
+      this.backgroundElement = document.getElementById("game-background");
+      // Background is kept fixed; no parallax transform here
+      if (this.backgroundElement) {
+        this.backgroundElement.style.transform = "translateY(0px)";
+      }
+    }
 
     // Platforms (only visible)
     this.platforms.forEach((platform) => {

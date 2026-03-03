@@ -40,6 +40,9 @@ const GAME_HEIGHT = 1080;
 function setupCanvas() {
     canvas.width = GAME_WIDTH;
     canvas.height = GAME_HEIGHT;
+    // Ensure canvas starts clear/transparent
+    ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    ctx.globalAlpha = 1;
 }
 setupCanvas();
 
