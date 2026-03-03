@@ -136,6 +136,16 @@ export class Platform {
         
         const numTiles = Math.max(1, Math.round(this.w / tileSize));
 
+       // vẽ bục chỉ có 1 tile
+    if (skins instanceof HTMLImageElement) {
+        if (skins.complete && skins.naturalWidth !== 0) {
+            for (let i = 0; i < numTiles; i++) {
+                ctx.drawImage(skins, screenPos.screenX + (i * tileSize), screenPos.screenY, tileSize, this.h);
+            }
+            return; // Vẽ xong thì thoát
+        }
+    }
+
         for (let i = 0; i < numTiles; i++) {
             const tileX = screenPos.screenX + (i * tileSize);
             let img = null;

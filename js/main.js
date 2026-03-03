@@ -59,8 +59,116 @@ const soundManager = new SoundManager();
 // ===== Platforms (Dev_Game map: moving, broken, bouncy, ice, oneWay, fake) =====
 // Set up assets
 export const platformAssets = {
+    normal: {
+        left: new Image(),
+        mid: new Image(),
+        right: new Image()
+    },
+    // Bục băng (ván gỗ trơn trượt)
+    ice: {
+        left: new Image(),
+        mid: new Image(),
+        right: new Image()
+    },
+    // Bục nảy 
+    bouncy: {
+        left: new Image(),
+        mid: new Image(),
+        right: new Image()
+    },
+    // bục di chuyển
+    moving: {
+        left: new Image(),
+        mid: new Image(),
+        right: new Image()
+    },
+    // bục đi từ dưới lên được
+     oneWay: {
+        left: new Image(),
+        mid: new Image(),
+        right: new Image()
+    },
+    // bục vỡ (đứng vào sẽ vỡ sau 1.5s, rồi hồi phục sau 1s)
+    broken: {
+        left: new Image(),
+        mid: new Image(),
+        right: new Image()
+    },
+    // bục giả flatform normal
+        fakeNormal: {
+            left: new Image(),     
+            mid: new Image(),
+            right: new Image()
+    },
+    // bục giả flatform oneWay
+        fakeOneWay: {
+            left: new Image(),     
+            mid: new Image(),
+            right: new Image()
+    },
+        trigger1: {
+            left: new Image(),     
+            mid: new Image(),
+            right: new Image()
+    },
+          trigger2: {
+            left: new Image(),     
+            mid: new Image(),
+            right: new Image()
+    },
+    normal_s1: new Image(),
+    normal_s2: new Image(),
+    // Riêng bục nghiêng trái và phải thì chỉ cần 1 ảnh thanh gỗ duy nhất
+    slopeLeft: new Image(),
+    slopeRight: new Image()
 };
 
+// Gán nguồn ảnh (Ví dụ)
+platformAssets.normal.left.src      = './Assets/normal1.png';
+platformAssets.normal.mid.src       = './Assets/normal2.png';
+platformAssets.normal.right.src     = './Assets/normal3.png';
+
+platformAssets.ice.left.src      = './Assets/ice1.png';
+platformAssets.ice.mid.src       = './Assets/ice2.png';
+platformAssets.ice.right.src     = './Assets/ice3.png';
+
+platformAssets.bouncy.left.src      = './Assets/bouncy1.png';
+platformAssets.bouncy.mid.src       = './Assets/bouncy2.png';
+platformAssets.bouncy.right.src     = './Assets/bouncy3.png';
+
+platformAssets.moving.left.src      = './Assets/moving1.png';
+platformAssets.moving.mid.src       = './Assets/moving2.png';
+platformAssets.moving.right.src     = './Assets/moving3.png';
+
+platformAssets.oneWay.left.src      = './Assets/oneWay1.png';
+platformAssets.oneWay.mid.src       = './Assets/oneWay2.png';
+platformAssets.oneWay.right.src     = './Assets/oneWay3.png';
+
+platformAssets.broken.left.src      = './Assets/broken1.png';
+platformAssets.broken.mid.src       = './Assets/broken2.png';
+platformAssets.broken.right.src     = './Assets/broken3.png';
+
+platformAssets.fakeNormal.left.src      = './Assets/normal1.png';
+platformAssets.fakeNormal.mid.src       = './Assets/normal2.png';
+platformAssets.fakeNormal.right.src     = './Assets/normal3.png';
+
+platformAssets.fakeOneWay.left.src      = './Assets/oneWay1.png';
+platformAssets.fakeOneWay.mid.src       = './Assets/oneWay2.png';
+platformAssets.fakeOneWay.right.src     = './Assets/oneWay3.png';
+
+platformAssets.trigger1.left.src      = './Assets/normal1.png';
+platformAssets.trigger1.mid.src       = './Assets/normal2.png';
+platformAssets.trigger1.right.src     = './Assets/normal3.png';
+
+platformAssets.trigger2.left.src      = './Assets/normal1.png';
+platformAssets.trigger2.mid.src       = './Assets/normal2.png';
+platformAssets.trigger2.right.src     = './Assets/normal3.png';
+
+platformAssets.normal_s1.src            = './Assets/normal_s1.png';
+platformAssets.normal_s2.src            = './Assets/normal_s2.png';
+
+platformAssets.slopeLeft.src            = './Assets/slopeLeft.png';
+platformAssets.slopeRight.src           = './Assets/slopeRight.png';
 
 // [SỬA]: Đưa platforms và player ra ngoài để truy cập toàn cục, nhưng KHÔNG khởi tạo giá trị ngay
 let platforms = [];
@@ -192,7 +300,7 @@ async function initGameSystems() {
     await loadMap();
 
     // 2. Sau khi có platforms mới tạo Player và Engine (kèm NPCDialogSystem để chạy typing + auto-close)
-    player = new Player(1550, 4320 - 150, eventTracker);
+    player = new Player(1550, 550, eventTracker);
     gameEngine = new GameEngine(
         canvas,
         ctx,
