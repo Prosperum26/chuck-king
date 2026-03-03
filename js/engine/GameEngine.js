@@ -10,6 +10,7 @@ export class GameEngine {
     aiRuleEngine,
     uiManager,
     npcDialogSystem = null,
+    npcs = []
   ) {
     this.canvas = canvas;
     this.ctx = ctx;
@@ -19,6 +20,7 @@ export class GameEngine {
     this.aiRuleEngine = aiRuleEngine;
     this.uiManager = uiManager;
     this.npcDialogSystem = npcDialogSystem;
+    this.npcs = npcs;
 
     // World / viewport
     this.mapWidth = 1920;
@@ -133,6 +135,13 @@ export class GameEngine {
     this.platforms.forEach((platform) => platform.update(dtMs, this.player));
     this.player.update(this.input, this.platforms, this.mapWidth, this.mapHeight, dtMs);
 
+    // Update NPCs
+    this.npcs.forEach((npc) => {
+      if (typeof npc.update === 'function') {
+        npc.update(dtMs);
+      }
+    });
+
     // Camera follows player
     this.camera.update(this.player);
   }
@@ -144,6 +153,15 @@ export class GameEngine {
     this.platforms.forEach((platform) => {
       if (this.camera.isVisible(platform.x, platform.y, platform.w, platform.h)) {
         platform.draw(this.ctx, this.camera);
+      }
+    });
+
+    // NPCs (only visible)
+    this.npcs.forEach((npc) => {
+      if (this.camera.isVisible(npc.x, npc.y, npc.w, npc.h)) {
+        if (typeof npc.draw === 'function') {
+          npc.draw(this.ctx, this.camera);
+        }
       }
     });
 
