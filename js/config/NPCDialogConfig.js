@@ -78,11 +78,32 @@ export const DEFAULT_DIALOGS = {
         dialogs: [
             "As dawn broke through the starry night sky, a rooster crow resounded across the farmland.",
             "The rooster crow itself is loud and clear. On the other hand, it also contained a feeling of melancholic finality.",
-            "Today is the day Player is destined to become fried chicken.",
-            "Player doesn’t want to be killed. Player wants to crow more.",
-            "So, Player decides to climb the barn to fulfill his dream once more!",
+            "Today is the day {{playerName}} is destined to become fried chicken.",
+            "{{playerName}} doesn't want to be killed. {{playerName}} wants to crow more.",
+            "So, {{playerName}} decides to climb the barn to fulfill his dream once more!",
         ],
     },
+    greeting: {
+        npcName: 'Sun',
+        dialogs: [
+            "Good Morning! What a wonderful day! How is it going? {{playerName}}",
+            "Say something… We are basically old buddies! Do you remember our memorable moments together?",
+            "You always whisper my name every dawn! How romantic you are <3.",
+            "Right, you are a chicken. Obviously, you cannot speak…",
+            "Anyway, today is the day you will be replaced by a new male rooster.",
+            "Honestly, your future looks bleak. With the addition of Chu Than, you will probably be cooked both literally and figuratively.",
+            "Don’t be so down! You did have a good time! You were loved by everyone at this farm. You even got yourself a girlfriend: Lieu Nhu Yen.",
+            "I know it is hard to accept, but nothing lasts forever. It is the universal rules of this world!",
+            "Okay, okay! I know empty words won’t resolve anything.",
+            "So how about you climb on top of this barn and give yourself a fine closure?",
+            "You know, like relieving your glorious memories one final time?",
+            "If it motivates you better, Lieu Nhu Yen is waiting on top of the barn.",
+            "I don’t know what she is doing over there, being sneaky and all.",
+            "My guess is that she is waiting for you, so don’t let a woman… don’t let a hen hanging like that!",
+            "Go! Relive your glory, {{playerName}}. I will be here to accompany you on your journey!",
+            "Ah, so this marks the beginning of a triumphant ending. A journey of the great {{playerName}} to find his closure!",
+        ],
+    },     
     meetingLNY: {
         npcName: 'Sun',
         dialogs: [
@@ -111,6 +132,7 @@ export const DEFAULT_DIALOGS = {
 // ========================
 export const DIALOG_PROMPTS = {
     intro: "You are Sun, a sarcastic talking sun. The player is an old rooster. Mention he is about to become KFC because Chu Than is better. Use Vietnamese.",
+    greeting: "You are Sun, a friendly and nostalgic talking sun. Greet the player warmly and ask about their well-being, reminiscing about your old friendship. Use English or Vietnamese.",
     climbing: "You are Sun. The player is climbing the barn. Remind him of LNY's betrayal and mock his slow progress. Use Vietnamese.",
     ending: "You are Sun. The player defeated Chu Than. Admit his skill reluctantly with a sarcastic tone. Use Vietnamese.",
 };

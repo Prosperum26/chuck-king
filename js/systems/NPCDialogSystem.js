@@ -88,7 +88,7 @@ export class NPCDialogSystem {
      * Hiển thị từng dòng một, mỗi dòng cách nhau 2 giây
      */
     async showDialog(dialogKey) {
-        const allowed = ['intro', 'stage1', 'stage2', 'stage3', 'stage4', 'ending'];
+        const allowed = ['intro', 'greeting', 'stage1', 'stage2', 'stage3', 'stage4', 'ending'];
         if (!allowed.includes(dialogKey) || !this.aiMessageGenerator) {
             console.warn(`[NPCDialogSystem] Invalid dialog key or no AI: "${dialogKey}"`);
             return;
@@ -122,10 +122,15 @@ export class NPCDialogSystem {
      */
     showNextDialogLine() {
         if (this.currentDialogIndex >= this.currentDialogLines.length) {
-            // Hết tất cả dòng - đóng dialog sau delay
+            // Hết tất cả dòng - nếu là intro thì tự động chuyển sang greeting
             this.dialogLineTimer = setTimeout(() => {
-                this.isPlayingMainDialog = false; // Dialog chính kết thúc
-                this.closeDialog();
+                if (this.currentStage === 'intro') {
+                    // Tự động chuyển sang greeting sau intro
+                    this.showDialog('greeting');
+                } else {
+                    this.isPlayingMainDialog = false; // Dialog chính kết thúc
+                    this.closeDialog();
+                }
             }, this.delayBetweenLines);
             return;
         }
