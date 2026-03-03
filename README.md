@@ -41,8 +41,6 @@ Game được xây dựng hoàn toàn bằng **Canvas 2D thuần JavaScript**, k
 
 ## 🚀 Live Demo
 
-> (Thêm link nếu bạn deploy lên GitHub Pages)
-
 ```
 https://prosperum26.github.io/chuck-king/
 ```
