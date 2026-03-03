@@ -68,7 +68,8 @@ Situation: {{triggerDesc}}
 Now taunt the player:`;
 
 // ========================
-// DIALOG MẶC ĐỊNH (Cốt truyện chính)
+// DIALOG MẶC ĐỊNH (Cốt truyện chính) - 5 loại
+// intro, stage1, stage2, stage3, ending
 // ========================
 export const DEFAULT_DIALOGS = {
     intro: {
@@ -81,25 +82,33 @@ export const DEFAULT_DIALOGS = {
             "So, {{playerName}} decides to climb the barn to fulfill his dream once more!",
         ],
     },
-    greeting: {
+    stage1: {
         npcName: 'Sun',
         dialogs: [
-            "Good Morning! What a wonderful day! How is it going? {{playerName}}",
+            "Good Morning! What a wonderful day! How is it going, {{playerName}}?",
             "Say something… We are basically old buddies! Do you remember our memorable moments together?",
             "You always whisper my name every dawn! How romantic you are <3.",
             "Right, you are a chicken. Obviously, you cannot speak…",
+        ],
+    },
+    stage2: {
+        npcName: 'Sun',
+        dialogs: [
             "Anyway, today is the day you will be replaced by a new male rooster.",
             "Honestly, your future looks bleak. With the addition of Chu Than, you will probably be cooked both literally and figuratively.",
             "Don’t be so down! You did have a good time! You were loved by everyone at this farm. You even got yourself a girlfriend: Lieu Nhu Yen.",
             "I know it is hard to accept, but nothing lasts forever. It is the universal rules of this world!",
+        ],
+    },
+    stage3: {
+        npcName: 'Sun',
+        dialogs: [
             "Okay, okay! I know empty words won’t resolve anything.",
             "So how about you climb on top of this barn and give yourself a fine closure?",
             "You know, like relieving your glorious memories one final time?",
             "If it motivates you better, Lieu Nhu Yen is waiting on top of the barn.",
-            "I don’t know what she is doing over there, being sneaky and all.",
-            "My guess is that she is waiting for you, so don’t let a woman… don’t let a hen hanging like that!",
+            "My guess is that she is waiting for you, so don’t let a hen hanging like that!",
             "Go! Relive your glory, {{playerName}}. I will be here to accompany you on your journey!",
-            "Ah, so this marks the beginning of a triumphant ending. A journey of the great {{playerName}} to find his closure!",
         ],
     },
     ending: {
@@ -112,11 +121,13 @@ export const DEFAULT_DIALOGS = {
 };
 
 // ========================
-// PROMPT DIALOG (Dành cho API)
+// PROMPT DIALOG (Dành cho API) - 5 loại
+// intro, stage1, stage2, stage3, ending
 // ========================
 export const DIALOG_PROMPTS = {
-    intro: "You are Sun, a sarcastic talking sun. The player is an old rooster. Mention he is about to become KFC because Chu Than is better. Use Vietnamese.",
-    greeting: "You are Sun, a friendly and nostalgic talking sun. Greet the player warmly and ask about their well-being, reminiscing about your old friendship. Use English or Vietnamese.",
-    climbing: "You are Sun. The player is climbing the barn. Remind him of LNY's betrayal and mock his slow progress. Use Vietnamese.",
-    ending: "You are Sun. The player defeated Chu Than. Admit his skill reluctantly with a sarcastic tone. Use Vietnamese.",
+    intro: "You are a neutral narrator called Story. Introduce the sad fate of the old rooster {{playerName}} and why today he decides to climb the barn one last time. Use Vietnamese.",
+    stage1: "You are Sun, a friendly and slightly teasing talking sun. Greet {{playerName}}, recall your old mornings together and encourage him as he starts climbing from the bottom of the barn. Use Vietnamese.",
+    stage2: "You are Sun, a sarcastic but caring talking sun. Talk about Chu Than replacing {{playerName}} and LNY betraying him, mixing comfort with light mockery while he climbs the middle part of the barn. Use Vietnamese.",
+    stage3: "You are Sun, a dramatic and teasing talking sun. Motivate {{playerName}} near the top of the barn, referencing his memories, LNY waiting above, and pushing him toward closure. Use Vietnamese.",
+    ending: "You are Sun. {{playerName}} finally reached the top and defeated Chu Than. Reluctantly praise his skill with a sarcastic tone and joke that maybe he won't become KFC after all. Use Vietnamese.",
 };
