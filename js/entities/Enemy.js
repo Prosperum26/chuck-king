@@ -12,7 +12,8 @@ export class Enemy {
 
         // --- HỆ THỐNG ANIMATION ---
         this.image = new Image();
-        this.image.src = './Assets/mini-chicken.png'; // Đường dẫn ảnh bạn vừa gửi
+        // GitHub Pages phân biệt hoa/thường → dùng "assets", không phải "Assets"
+        this.image.src = './assets/mini-chicken.png';
         
         this.frameX = 0;         // Khung hình hiện tại (0 hoặc 1)
         this.maxFrames = 2;      // Tổng số khung hình trong ảnh
@@ -40,7 +41,8 @@ export class Enemy {
     draw(ctx, camera) {
         const screenPos = camera.worldToScreen(this.x, this.y);
         
-        if (this.image.complete) {
+        // Chỉ vẽ khi ảnh đã load OK (tránh lỗi "broken" image trên GitHub Pages).
+        if (this.image.complete && this.image.naturalWidth > 0 && this.image.naturalHeight > 0) {
             ctx.save();
             
             // Tính toán kích thước 1 khung hình trong ảnh gốc (Sprite Sheet)

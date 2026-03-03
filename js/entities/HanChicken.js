@@ -19,6 +19,7 @@ export class HanChicken {
         this.maxFrames = 2;
 
         // Load hình ảnh sprite sheet cho các animation
+        // GitHub Pages phân biệt hoa/thường → luôn dùng "assets" (lowercase).
         const getAsset = (path) => new URL(path, import.meta.url).href;
 
         this.animations = {};
@@ -43,11 +44,11 @@ export class HanChicken {
         };
 
         // Idle: trái tim bay lượn
-        createAnimation('idle', '../../Assets/chicken-heart.png', 2, 2);
+        createAnimation('idle', '../../assets/chicken-heart.png', 2, 2);
         // Fall: hiệu ứng gà hồn rơi
-        createAnimation('fall', '../../Assets/Fall(G).png', 6, 10);
+        createAnimation('fall', '../../assets/Fall(G).png', 6, 10);
         // Kick: hiệu ứng gà đá + trái tim
-        createAnimation('kick', '../../Assets/kick.png', 5, 10);
+        createAnimation('kick', '../../assets/kick.png', 5, 10);
 
         // Ảnh đang dùng để vẽ (mặc định là idle)
         this.spriteImage = null;
