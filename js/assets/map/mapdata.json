@@ -873,7 +873,7 @@
                  "id":74,
                  "name":"",
                  "rotation":0,
-                 "type":"",
+                 "type":"trigger",
                  "visible":true,
                  "width":256,
                  "x":1184,
@@ -951,9 +951,37 @@
          "visible":true,
          "x":0,
          "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":13,
+         "name":"EnemyLayer",
+         "objects":[
+                {
+                 "height":32,
+                 "id":84,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"range",
+                         "type":"string",
+                         "value":"200"
+                        }],
+                 "rotation":0,
+                 "type":"chick",
+                 "visible":true,
+                 "width":32,
+                 "x":960,
+                 "y":3168
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":12,
- "nextobjectid":84,
+ "nextlayerid":14,
+ "nextobjectid":86,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",

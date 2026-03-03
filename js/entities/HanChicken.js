@@ -13,28 +13,53 @@ export class HanChicken {
         this.frameInterval = 1000 / this.fps;
         this.currentState = 'idle';
 
-        // Kích thước frame từ sprite sheet chicken-heart.png
-        // File có kích thước 32x32 mỗi frame, 2 frame theo chiều ngang
-        this.frameWidth = 32;   // Chiều rộng mỗi frame trong sprite
-        this.frameHeight = 32;  // Chiều cao mỗi frame trong sprite
-        this.maxFrames = 2;     // chicken-heart.png có 2 frame theo chiều ngang
+        // Kích thước frame mặc định cho tất cả sprite (32x32)
+        this.frameWidth = 32;
+        this.frameHeight = 32;
+        this.maxFrames = 2;
 
-        // Load hình ảnh sprite sheet
+        // Load hình ảnh sprite sheet cho các animation
         const getAsset = (path) => new URL(path, import.meta.url).href;
 
-        this.spriteImage = new Image();
-        this.spriteImage.src = getAsset('../../Assets/chicken-heart.png');
+        this.animations = {};
+
+        const createAnimation = (key, src, frameCount, fps) => {
+            const image = new Image();
+            const anim = {
+                image,
+                frameWidth: 32,
+                frameHeight: 32,
+                maxFrames: frameCount,
+                fps,
+                loaded: false,
+            };
+
+            image.src = getAsset(src);
+            image.onload = () => {
+                anim.loaded = true;
+            };
+
+            this.animations[key] = anim;
+        };
+
+        // Idle: trái tim bay lượn
+        createAnimation('idle', '../../Assets/chicken-heart.png', 2, 2);
+        // Fall: hiệu ứng gà hồn rơi
+        createAnimation('fall', '../../Assets/Fall(G).png', 6, 10);
+        // Kick: hiệu ứng gà đá + trái tim
+        createAnimation('kick', '../../Assets/kick.png', 5, 10);
+
+        // Ảnh đang dùng để vẽ (mặc định là idle)
+        this.spriteImage = null;
 
         // Đảm bảo ảnh được load hoàn toàn trước khi render
-        this.imageLoaded = false;
-        this.spriteImage.onload = () => {
-            this.imageLoaded = true;
-        };
+        this.setAnimation('idle', false);
     }
 
     update(deltaTime) {
+        const currentAnim = this.animations[this.currentState];
         // Chỉ cập nhật animation nếu ảnh đã load
-        if (!this.imageLoaded) {
+        if (!currentAnim || !currentAnim.loaded) {
             return;
         }
 
@@ -53,8 +78,41 @@ export class HanChicken {
         }
     }
 
+    // Đổi animation hiện tại
+    setAnimation(state, resetFrame = true) {
+        const anim = this.animations[state];
+        if (!anim) return;
+
+        this.currentState = state;
+        this.spriteImage = anim.image;
+        this.frameWidth = anim.frameWidth;
+        this.frameHeight = anim.frameHeight;
+        this.maxFrames = anim.maxFrames;
+        this.fps = anim.fps;
+        this.frameInterval = 1000 / this.fps;
+
+        if (resetFrame) {
+            this.frameX = 0;
+            this.frameTimer = 0;
+        }
+    }
+
+    // Các hàm public để bên ngoài có thể gọi dễ dàng
+    playIdle() {
+        this.setAnimation('idle', true);
+    }
+
+    playFall() {
+        this.setAnimation('fall', true);
+    }
+
+    playKick() {
+        this.setAnimation('kick', true);
+    }
+
      draw(ctx, camera) {
-        if (!this.imageLoaded || !this.spriteImage.complete) return;
+        const currentAnim = this.animations[this.currentState];
+        if (!currentAnim || !currentAnim.loaded || !this.spriteImage || !this.spriteImage.complete) return;
 
         let screenX = this.x;
         let screenY = this.y;
