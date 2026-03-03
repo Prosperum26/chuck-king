@@ -220,7 +220,8 @@ export class Player {
         platforms.forEach(p => {
             if (
                 (p.type === "broken" && p.isBroken) || 
-                p.type === "fake" || 
+                p.type === "fakeNormal" || 
+                p.type === "fakeOneWay" || 
                 p.type === "oneWay" || 
                 p.type === "slopeLeft" || 
                 p.type === "slopeRight"
@@ -251,7 +252,7 @@ export class Player {
         let foundGround = false; 
 
         platforms.forEach(p => {
-            if ((p.type === "broken" && p.isBroken) || p.type === "fake") return; 
+            if ((p.type === "broken" && p.isBroken) || p.type === "fakeNormal" || p.type === "fakeOneWay") return; 
             if (this.checkCollision(p)) {
                 // --- XỬ LÝ RIÊNG CHO BỤC NGHIÊNG ---
                 if (p.type === "slopeLeft" || p.type === "slopeRight") {
