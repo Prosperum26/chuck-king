@@ -1,3 +1,4 @@
+import { platformAssets } from '../main.js';
 export class Platform {
     // Sử dụng param1, param2 để linh hoạt nhận data (range, speed) cho bục moving từ main.js
     constructor(x, y, w, h, type = "normal", param1 = 0, param2 = 1) {
@@ -44,13 +45,14 @@ export class Platform {
         const frameFactor = (typeof deltaTime === 'number' && isFinite(deltaTime) && deltaTime > 0)
             ? deltaTime / (1000 / 60)
             : 1;
-        // 1. Logic cho bục di chuyển
+       // --- Logic di chuyển (Moving Platform) ---
         if (this.type === "moving") {
             this.x += this.speed * this.direction;
             if (Math.abs(this.x - this.startX) > this.range) {
                 this.direction *= -1;
             }
         }
+
         // 2. Logic cho bục wood 2 (broken)
         if (this.type === "broken") {
             // Giai đoạn 1: BỤC ĐANG TỒN TẠI
@@ -97,67 +99,81 @@ export class Platform {
     }
 
     draw(ctx, camera) {
-        // Nếu bục đã vỡ (isBroken = true) thì không vẽ gì cả
-        if (this.isBroken) return; 
+    if (this.isBroken) return;
+    const screenPos = camera.worldToScreen(this.x, this.y);
+    const tileSize = 32;
 
-        // Get screen position from world position
-        const screenPos = camera.worldToScreen(this.x, this.y);
+    // --- LOGIC VẼ BỤC NGHIÊNG ---
+    if (this.type === "slopeLeft" || this.type === "slopeRight") {
+        // Kiểm tra xem có ảnh slope chưa, nếu chưa có hoặc chưa gán thì vẽ màu luôn
+        const img = (typeof platformAssets !== 'undefined') ? 
+                    (this.type === "slopeLeft" ? platformAssets.slopeLeft : platformAssets.slopeRight) : null;
 
-        // Chọn màu sắc
-        switch (this.type) {
-            case "ice": ctx.fillStyle = "#A5F2F3"; break; 
-            case "bouncy": ctx.fillStyle = "#FF477E"; break; 
-            case "moving": ctx.fillStyle = "#F4D03F"; break; 
-            
-            // Màu bục vỡ: Có thể đổi màu nhẹ khi đã bị kích hoạt để người chơi biết
-            case "broken": 
-                if (this.isTriggered) {
+        if (img && img.complete && img.naturalWidth !== 0) {
+            ctx.drawImage(img, screenPos.screenX, screenPos.screenY, this.w, this.h);
+        } else {
+            // VẼ MÀU CHO DỐC (KHI CHƯA CÓ ẢNH)
+            ctx.fillStyle = "#E67E22"; // Màu cam đặc trưng cho dốc
+            ctx.beginPath();
+            if (this.type === "slopeLeft") {
+                ctx.moveTo(screenPos.screenX, screenPos.screenY);
+                ctx.lineTo(screenPos.screenX + this.w, screenPos.screenY + this.h);
+                ctx.lineTo(screenPos.screenX, screenPos.screenY + this.h);
+            } else {
+                ctx.moveTo(screenPos.screenX + this.w, screenPos.screenY);
+                ctx.lineTo(screenPos.screenX + this.w, screenPos.screenY + this.h);
+                ctx.lineTo(screenPos.screenX, screenPos.screenY + this.h);
+            }
+            ctx.fill();
+            ctx.strokeStyle = "rgba(255,255,255,0.5)";
+            ctx.stroke();
+        }
+    } 
+    // --- LOGIC VẼ BỤC THẲNG ---
+    else {
+        // Kiểm tra an toàn: platformAssets có tồn tại và có loại bục này không?
+        let skins = (typeof platformAssets !== 'undefined') ? platformAssets[this.type] : null;
+        
+        const numTiles = Math.max(1, Math.round(this.w / tileSize));
+
+        for (let i = 0; i < numTiles; i++) {
+            const tileX = screenPos.screenX + (i * tileSize);
+            let img = null;
+
+            // Chỉ cố gắng lấy ảnh nếu bộ skins có tồn tại và có đủ đầu/giữa/đuôi
+            if (skins && skins.mid) {
+                if (numTiles === 1) img = skins.mid;
+                else if (i === 0) img = skins.left;
+                else if (i === numTiles - 1) img = skins.right;
+                else img = skins.mid;
+            }
+
+            // Nếu có ảnh và ảnh đã load xong
+            if (img && img.complete && img.naturalWidth !== 0) {
+                ctx.drawImage(img, tileX, screenPos.screenY, tileSize, this.h);
+            } else {
+                // VẼ KHỐI MÀU (KHI CHƯA SET UP ẢNH)
+                // Tùy biến màu theo loại bục để dễ phân biệt khi test
+                if (this.type === "ice") ctx.fillStyle = "#A5F2F3";
+                else if (this.type === "bouncy") ctx.fillStyle = "#FF477E";
+                else if (this.type === "moving") ctx.fillStyle = "#F4D03F";
+                else if (this.type === "oneWay") ctx.fillStyle = "#2ECC71";
+                else if (this.type === "fake") ctx.fillStyle = "#3f10b6";
+                else if (this.type === "broken") 
+                    {
+                    if (this.isTriggered) {
                     ctx.fillStyle = "#7F8C8D"; // Có thể thay màu xám nhạt hơn (đang đếm ngược)
                 } else {
                     ctx.fillStyle = "#7F8C8D"; // Màu xám gốc
                 }
-                break;
-                
-            case "oneWay": ctx.fillStyle = "#2ECC71"; break;
-            case "fake": ctx.fillStyle = "#3f10b6"; break; 
-            // Màu cho bục nghiêng (Sử dụng màu tím đậm hoặc đỏ để cảnh báo độ nguy hiểm)
-            case "slopeLeft": 
-            case "slopeRight": ctx.fillStyle = "#E67E22"; break;
-            default: ctx.fillStyle = "#4A2C2A"; 
-        }
-        // --- LOGIC VẼ HÌNH DÁNG ---
-    if (this.type === "slopeLeft") {
-        // Dốc nghiêng trái: Cao bên trái, thấp bên phải (\) -> trượt sang phải
-        ctx.beginPath();
-        ctx.moveTo(screenPos.screenX, screenPos.screenY); // Góc trên trái
-        ctx.lineTo(screenPos.screenX + this.w, screenPos.screenY + this.h); // Góc dưới phải
-        ctx.lineTo(screenPos.screenX, screenPos.screenY + this.h); // Góc dưới trái
-        ctx.closePath();
-        ctx.fill();
-        
-        // Vẽ viền cho dốc
-        ctx.strokeStyle = "rgba(255,255,255,0.5)";
-        ctx.stroke();
+                    }
+                else ctx.fillStyle = "#4A2C2A"; // Mặc định màu nâu gỗ
 
-    } else if (this.type === "slopeRight") {
-        // Dốc nghiêng phải: Cao bên phải, thấp bên trái (/) -> trượt sang trái
-        ctx.beginPath();
-        ctx.moveTo(screenPos.screenX + this.w, screenPos.screenY); // Góc trên phải
-        ctx.lineTo(screenPos.screenX + this.w, screenPos.screenY + this.h); // Góc dưới phải
-        ctx.lineTo(screenPos.screenX, screenPos.screenY + this.h); // Góc dưới trái
-        ctx.closePath();
-        ctx.fill();
-
-        // Vẽ viền cho dốc
-        ctx.strokeStyle = "rgba(255,255,255,0.5)";
-        ctx.stroke();
-    }else{
-        // Vẽ hình khối
-        ctx.fillRect(screenPos.screenX, screenPos.screenY, this.w, this.h);
-        
-        // Vẽ viền
-        ctx.strokeStyle = "rgba(255,255,255,0.5)";
-        ctx.strokeRect(screenPos.screenX, screenPos.screenY, this.w, this.h);
+                ctx.fillRect(tileX, screenPos.screenY, tileSize, this.h);
+                ctx.strokeStyle = "rgba(255,255,255,0.3)";
+                ctx.strokeRect(tileX, screenPos.screenY, tileSize, this.h);
+            }
         }
     }
+}
 }

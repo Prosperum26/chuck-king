@@ -10,10 +10,12 @@ export class GameEngine {
     aiRuleEngine,
     uiManager,
     npcDialogSystem = null,
+    enemies = []
   ) {
     this.canvas = canvas;
     this.ctx = ctx;
     this.player = player;
+    this.enemies = enemies;
     this.platforms = platforms;
     this.eventTracker = eventTracker;
     this.aiRuleEngine = aiRuleEngine;
@@ -132,7 +134,28 @@ export class GameEngine {
     // Platforms & player simulation in world coords
     this.platforms.forEach((platform) => platform.update(dtMs, this.player));
     this.player.update(this.input, this.platforms, this.mapWidth, this.mapHeight, dtMs);
+    // 2. CẬP NHẬT GÀ CON VÀ XỬ LÝ VA CHẠM ĐẨY NGƯỜI CHƠI
+    this.enemies.forEach((enemy) => {
+      enemy.update(dtMs); // Chạy animation và di chuyển tuần tra
 
+      // Kiểm tra va chạm giữa Player và Gà con
+      if (this.player.checkCollision(enemy)) {
+        // A. Nhảy lên đầu gà: Nảy lên (Boing!)
+        if (this.player.vy > 0 && (this.player.y + this.player.h) < (enemy.y + enemy.h / 2 + 10)) {
+          this.player.vy = -18; 
+          this.player.y = enemy.y - this.player.h; // Tránh dính vào nhau
+        } 
+        // B. Va chạm ngang: Gà tông người hoặc người đâm gà -> Đẩy văng (Knockback)
+        else {
+          const pushDir = (this.player.x + this.player.w / 2 > enemy.x + enemy.w / 2) ? 1 : -1;
+          this.player.vx = pushDir * 15; // Lực đẩy ngang cực mạnh
+          this.player.vy = -8;           // Nảy nhẹ lên trời cho mất kiểm soát
+          
+          // Ghi lại sự kiện bị gà tông để AI có cớ "chửi"
+          this.eventTracker?.track?.('enemy_hit'); 
+        }
+      }
+    });
     // Camera follows player
     this.camera.update(this.player);
   }
@@ -144,6 +167,13 @@ export class GameEngine {
     this.platforms.forEach((platform) => {
       if (this.camera.isVisible(platform.x, platform.y, platform.w, platform.h)) {
         platform.draw(this.ctx, this.camera);
+      }
+    });
+
+    // VẼ GÀ CON (Chỉ vẽ nếu nằm trong Camera)
+    this.enemies.forEach((enemy) => {
+      if (this.camera.isVisible(enemy.x, enemy.y, enemy.w, enemy.h)) {
+        enemy.draw(this.ctx, this.camera);
       }
     });
 
