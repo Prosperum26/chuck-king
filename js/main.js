@@ -15,6 +15,7 @@ import { AICallLogic } from './systems/AICallLogic.js';
 import { UIManager } from './ui/UIManager.js';
 import { NPCDialogSystem } from './systems/NPCDialogSystem.js';
 import { SoundManager } from './systems/SoundManager.js';
+import { Enemy } from './entities/Enemy.js';
 
 // ===== Initialize Modal Elements (AI/FE) =====
 const modal = document.getElementById('api-key-modal');
@@ -57,13 +58,21 @@ const npcDialogSystem = new NPCDialogSystem(aiMessageGenerator);
 const soundManager = new SoundManager();
 
 // ===== Platforms (Dev_Game map: moving, broken, bouncy, ice, oneWay, fake) =====
+// Set up assets
+export const platformAssets = {
+};
+
+
 // [SỬA]: Đưa platforms và player ra ngoài để truy cập toàn cục, nhưng KHÔNG khởi tạo giá trị ngay
 let platforms = [];
-let npcs = [];
+let enemies = [];
 let player = null;
 let gameEngine = null;
 
 async function loadMap() {
+    // PHẢI đảm bảo enemies là mảng rỗng ngay từ đầu để tránh lỗi undefined
+    platforms = [];
+    enemies = [];
     try {
         const response = await fetch('./js/assets/map/mapdata.json'); 
         const mapData = await response.json();
@@ -111,7 +120,21 @@ async function loadMap() {
             // Các loại bục khác bao gồm slopeLeft, slopeRight, ice, bouncy...
             return new Platform(obj.x, obj.y, obj.width, obj.height, type);
         });
+        const enemyLayer = mapData.layers.find(layer => 
+            layer.type === "objectgroup" && layer.name === "EnemyLayer"
+        );
 
+        if (enemyLayer && enemyLayer.objects) {
+            enemies = enemyLayer.objects.map(obj => {
+                let range = 200; 
+                if (obj.properties) {
+                    const p = obj.properties.find(prop => prop.name === "range");
+                    if (p) range = p.value;
+                }
+                // Sử dụng obj.width/height từ Tiled thay vì fix cứng 40/40 để linh hoạt hơn
+                return new Enemy(obj.x, obj.y, obj.width || 40, obj.height || 40, range);
+            });
+        }
         console.log(`✅ Đã nạp thành công ${platforms.length} bục từ CollisionLayer!`);
     } catch (e) {
         console.error("❌ Lỗi nạp Map:", e); 
@@ -184,7 +207,7 @@ async function initGameSystems() {
         aiRuleEngine,
         uiManager,
         npcDialogSystem,
-        npcs
+        enemies
     );
 
     // 4. Mở Modal cấu hình
