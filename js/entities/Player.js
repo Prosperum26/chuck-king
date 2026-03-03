@@ -59,10 +59,10 @@ export class Player {
         this.fallImage.src = getAsset('../../assets/Fall.png');
 
         this.appearingImage = new Image();
-        this.appearingImage.src = getAsset('../../Assets/player_assets/Appearing (96x96).png');
+        this.appearingImage.src = getAsset('../../assets/Appearing (96x96).png');
 
         this.disappearingImage = new Image();
-        this.disappearingImage.src = getAsset('../../assets/player_assets/Desappearing (96x96).png'); 
+        this.disappearingImage.src = getAsset('../../assets/Desappearing (96x96).png'); 
         
         this.frameX = 0;           
         

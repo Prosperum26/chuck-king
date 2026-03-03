@@ -6,10 +6,9 @@
 import {
     DEFAULT_TAUNT_MESSAGES,
     TAUNT_NPC_NAME,
-    TAUNT_PROMPT_BASE,
-    TAUNT_TRIGGER_DESCRIPTIONS,
+    TAUNT_BATCH_PROMPT,
     DEFAULT_DIALOGS,
-    DIALOG_PROMPTS,
+    DIALOG_PROMPT,
 } from '../config/NPCDialogConfig.js';
 import { callLLMText } from './LLMClient.js';
 
@@ -36,6 +35,12 @@ export class AIMessageGenerator {
         this.currentStageKey = 'stage1';
         this.stageTauntCache = new Map(); // stageKey -> string[]
         this.stageTauntPrefetchInProgress = new Set(); // stageKey
+
+        // New taunt batch caches (fall / idle)
+        this.aiFallTaunts = [];
+        this.aiIdleTaunts = [];
+        this.tauntBatchPrefetched = false;
+        this.tauntBatchPrefetchInProgress = false;
     }
     
     /**
@@ -46,16 +51,16 @@ export class AIMessageGenerator {
     async generateMessage(triggerType, context) {
         try {
             // IMPORTANT: Taunt AI chỉ được tạo 1 lần ở đầu stage (prefetch).
-            // Ở đây chỉ lấy ngẫu nhiên từ cache của stage hiện tại.
+            // Ở đây chỉ lấy ngẫu nhiên từ cache AI (fall/idle) nếu có.
             if (this.apiEndpoint && this.apiKey) {
-                const pooled = this.getRandomTauntFromStagePool(this.currentStageKey);
+                const pooled = this.getRandomTaunt(triggerType);
                 if (pooled) {
-                    console.log(`[AIMessageGenerator] 🤖 AI(pool:${this.currentStageKey}) -> "${pooled}"`);
+                    console.log(`[AIMessageGenerator] 🤖 AI(${triggerType}) -> "${pooled}"`);
                     this.currentMessage = pooled;
                     this.dispatchMessage(pooled);
                     return;
                 }
-                console.log(`[AIMessageGenerator] ℹ️ AI pool empty for stage "${this.currentStageKey}" -> fallback DEFAULT`);
+                console.log('[AIMessageGenerator] ℹ️ AI taunt pool empty -> fallback DEFAULT');
             }
         } catch (error) {
             console.warn('[AIMessageGenerator] AI taunt pool failed, using hardcoded:', error.message);
@@ -70,75 +75,145 @@ export class AIMessageGenerator {
     }
     
     /**
-     * Call AI API to generate message using AICallLogic
-     * @param {string} triggerType 
-     * @param {object} context 
-     * @returns {Promise<string|null>}
-     */
-    /**
-     * Prefetch taunts 20-30 câu cho 1 stage (gọi 1 lần ở đầu stage).
+     * Prefetch taunts (fall + idle) bằng TAUNT_BATCH_PROMPT (gọi 1 lần khi có API).
      */
     async prefetchStageTaunts(stageKey = 'stage1', context = {}) {
+        // Giữ API cũ: hàm vẫn nhận stageKey/context nhưng bên trong dùng batch prompt mới.
         const key = stageKey || 'stage1';
         this.currentStageKey = key;
 
         if (!this.apiEndpoint || !this.apiKey) {
-            console.log(`[AIMessageGenerator] 💬 DEFAULT(pool:${key}) - no API config, will use hardcoded per trigger`);
+            console.log(`[AIMessageGenerator] 💬 DEFAULT(taunt batch) - no API config, will use hardcoded per trigger`);
             return { success: false, message: 'NO_API' };
         }
 
-        if (this.stageTauntCache.has(key)) {
-            console.log(`[AIMessageGenerator] 🤖 AI(pool:${key}) already prefetched (${this.stageTauntCache.get(key).length} lines)`);
-            return { success: true, message: 'CACHED', count: this.stageTauntCache.get(key).length };
+        if (this.tauntBatchPrefetched && this.aiFallTaunts.length + this.aiIdleTaunts.length > 0) {
+            console.log(`[AIMessageGenerator] 🤖 AI(taunt batch) already prefetched (fall:${this.aiFallTaunts.length}, idle:${this.aiIdleTaunts.length})`);
+            return {
+                success: true,
+                message: 'CACHED',
+                count: this.aiFallTaunts.length + this.aiIdleTaunts.length,
+            };
         }
-        if (this.stageTauntPrefetchInProgress.has(key)) {
-            console.log(`[AIMessageGenerator] ⏳ AI(pool:${key}) prefetch in progress...`);
+        if (this.tauntBatchPrefetchInProgress) {
+            console.log('[AIMessageGenerator] ⏳ AI(taunt batch) prefetch in progress...');
             return { success: false, message: 'IN_PROGRESS' };
         }
 
-        this.stageTauntPrefetchInProgress.add(key);
+        this.tauntBatchPrefetchInProgress = true;
         try {
-            const fallCount = Number(context?.fallCount || 0);
-            const prompt = `Bạn là NPC mỉa mai trong game platformer. Người chơi đang ở ${key}, đã rơi ${fallCount} lần.
-Hãy tạo một danh sách câu trêu chọc (châm biếm/cà khịa) để dùng ngẫu nhiên trong stage này.
-Yêu cầu:
-- Trả về ĐÚNG một JSON array gồm 20 đến 30 câu tiếng Việt.
-- Mỗi phần tử là 1 câu, không markdown, không giải thích.
-- Tránh câu quá dài: mỗi câu <= 20 từ.
-Ví dụ: ["Câu 1.","Câu 2.","Câu 3..."]`;
-
-            const result = await callLLMText({
-                endpoint: this.apiEndpoint,
-                apiKey: this.apiKey,
-                model: this.model,
-                prompt,
-                maxTokens: 700,
-                temperature: 0.85,
-                timeoutMs: 15000
-            });
-            if (!result.success) {
-                console.warn(`[AIMessageGenerator] ❌ AI(pool:${key}) prefetch failed: ${result.message}`);
-                return { success: false, message: result.message || 'FAILED' };
-            }
-
-            const list = this.parseJSONArray(result.content);
-            if (!list || list.length < 5) {
-                console.warn(`[AIMessageGenerator] ❌ AI(pool:${key}) invalid JSON array, fallback DEFAULT`);
-                return { success: false, message: 'INVALID_JSON' };
-            }
-
-            // Clamp to 20-30 if model returns more
-            const trimmed = list.slice(0, 30);
-            this.stageTauntCache.set(key, trimmed);
-            console.log(`[AIMessageGenerator] ✅ AI(pool:${key}) prefetched ${trimmed.length} taunts`);
-            return { success: true, message: 'OK', count: trimmed.length };
+            const result = await this.callTauntBatchPrompt();
+            if (!result.success) return result;
+            console.log(
+                `[AIMessageGenerator] ✅ AI(taunt batch) prefetched fall:${this.aiFallTaunts.length}, idle:${this.aiIdleTaunts.length}`
+            );
+            return {
+                success: true,
+                message: 'OK',
+                count: this.aiFallTaunts.length + this.aiIdleTaunts.length,
+            };
         } finally {
-            this.stageTauntPrefetchInProgress.delete(key);
+            this.tauntBatchPrefetchInProgress = false;
         }
     }
 
-    getRandomTauntFromStagePool(stageKey) {
-        const list = this.stageTauntCache.get(stageKey);
+    /**
+     * Gọi TAUNT_BATCH_PROMPT → parse theo format:
+     * ===FALL=== ... ||| ...
+     *
+     * ===IDLE=== ... ||| ...
+     */
+    async callTauntBatchPrompt() {
+        const result = await callLLMText({
+            endpoint: this.apiEndpoint,
+            apiKey: this.apiKey,
+            model: this.model,
+            prompt: TAUNT_BATCH_PROMPT,
+            maxTokens: 800,
+            temperature: 0.85,
+            timeoutMs: 18000,
+        });
+
+        if (!result.success) {
+            console.warn(`[AIMessageGenerator] ❌ AI(taunt batch) failed: ${result.message}`);
+            this.tauntBatchPrefetched = true; // tránh spam API
+            this.aiFallTaunts = [];
+            this.aiIdleTaunts = [];
+            return { success: false, message: result.message || 'FAILED' };
+        }
+
+        const parsed = this.parseTauntBatch(result.content);
+        if (!parsed) {
+            console.warn('[AIMessageGenerator] ❌ AI(taunt batch) invalid format, fallback DEFAULT');
+            this.tauntBatchPrefetched = true;
+            this.aiFallTaunts = [];
+            this.aiIdleTaunts = [];
+            return { success: false, message: 'INVALID_FORMAT' };
+        }
+
+        this.aiFallTaunts = parsed.fallTaunts;
+        this.aiIdleTaunts = parsed.idleTaunts;
+        this.tauntBatchPrefetched = true;
+        return { success: true, message: 'OK' };
+    }
+
+    /**
+     * Parse batch string theo format yêu cầu (FALL / IDLE, separator "|||").
+     */
+    parseTauntBatch(rawContent) {
+        if (!rawContent || typeof rawContent !== 'string') return null;
+
+        // Loại bỏ ``` hoặc ```json wrapper nếu có
+        let response = rawContent.trim().replace(/^```[a-zA-Z]*\s*|\s*```$/g, '').trim();
+
+        if (!response.includes('===FALL===') || !response.includes('===IDLE===')) {
+            return null;
+        }
+
+        const [fallPart, idlePartRaw] = response.split('===IDLE===');
+        if (!fallPart || !idlePartRaw) return null;
+
+        const fallTaunts = fallPart
+            .replace('===FALL===', '')
+            .trim()
+            .split('|||')
+            .map((s) => s.trim())
+            .filter(Boolean);
+
+        const idleTaunts = idlePartRaw
+            .trim()
+            .split('|||')
+            .map((s) => s.trim())
+            .filter(Boolean);
+
+        if (!fallTaunts.length && !idleTaunts.length) return null;
+
+        return {
+            fallTaunts,
+            idleTaunts,
+        };
+    }
+
+    /**
+     * Lấy random 1 câu trêu chọc từ pool AI theo triggerType (fall/idle/stuck).
+     * - fall → ưu tiên fallTaunts
+     * - idle → ưu tiên idleTaunts
+     * - stuck → dùng cả 2 pool
+     */
+    getRandomTaunt(triggerType) {
+        const hasAny = (this.aiFallTaunts && this.aiFallTaunts.length) || (this.aiIdleTaunts && this.aiIdleTaunts.length);
+        if (!hasAny) return null;
+
+        let list = [];
+        if (triggerType === 'idle') {
+            list = this.aiIdleTaunts.length ? this.aiIdleTaunts : this.aiFallTaunts;
+        } else if (triggerType === 'fall') {
+            list = this.aiFallTaunts.length ? this.aiFallTaunts : this.aiIdleTaunts;
+        } else {
+            // stuck hoặc loại khác → gộp chung
+            list = [...(this.aiFallTaunts || []), ...(this.aiIdleTaunts || [])];
+        }
+
         if (!list || list.length === 0) return null;
         return list[Math.floor(Math.random() * list.length)];
     }
@@ -233,28 +308,12 @@ Ví dụ: ["Câu 1.","Câu 2.","Câu 3..."]`;
 
         this.dialogPrefetchInProgress = true;
         try {
-            const prompt = `Bạn là NPC trong game platformer. Hãy tạo toàn bộ dialog cho cả game.
-Yêu cầu bắt buộc:
-- Trả về ĐÚNG một JSON object (không markdown, không giải thích).
-- JSON có dạng:
-{
-  "npcName": "Tên NPC",
-  "intro": ["...","..."],
-  "stage1": ["...","..."],
-  "stage2": ["...","..."],
-  "stage3": ["...","..."],
-  "stage4": ["...","..."],
-  "ending": ["...","..."]
-}
-- Mỗi key intro/stage*/ending là một JSON array 2-6 câu (mỗi câu là 1 string tiếng Việt).
-- Tông giọng: châm biếm nhẹ, gây cười, hợp game.
-- Không dùng ký tự xuống dòng trong từng string (mỗi phần tử là 1 câu).`;
-
             const result = await callLLMText({
                 endpoint: this.apiEndpoint,
                 apiKey: this.apiKey,
                 model: this.model,
-                prompt,
+                // Dùng DIALOG_PROMPT mới (batch, có ===SECTION===)
+                prompt: DIALOG_PROMPT,
                 maxTokens: 900,
                 temperature: 0.8,
                 timeoutMs: 20000
@@ -266,28 +325,15 @@ Yêu cầu bắt buộc:
                 return { success: false, message: result.message || 'FAILED' };
             }
 
-            const obj = this.parseJSONObject(result.content);
-            const npcName = typeof obj?.npcName === 'string' ? obj.npcName.trim() : null;
-            const keys = ['intro', 'stage1', 'stage2', 'stage3', 'stage4', 'ending'];
-            const dialogsByType = {};
-            for (const k of keys) {
-                const arr = Array.isArray(obj?.[k]) ? obj[k] : null;
-                if (!arr) continue;
-                dialogsByType[k] = arr
-                    .filter((s) => typeof s === 'string')
-                    .map((s) => s.trim())
-                    .filter(Boolean);
-            }
-
-            const hasAny = Object.values(dialogsByType).some((a) => Array.isArray(a) && a.length > 0);
-            if (!hasAny) {
-                console.warn('[AIMessageGenerator] ❌ AI(dialogs) invalid JSON content, fallback DEFAULT');
+            const parsed = this.parseDialogSections(result.content);
+            if (!parsed) {
+                console.warn('[AIMessageGenerator] ❌ AI(dialogs) invalid SECTION format, fallback DEFAULT');
                 this.dialogPrefetchDone = true;
                 this.prefetchedDialogs = null;
-                return { success: false, message: 'INVALID_JSON' };
+                return { success: false, message: 'INVALID_FORMAT' };
             }
 
-            this.prefetchedDialogs = { npcName, dialogsByType };
+            this.prefetchedDialogs = parsed;
             this.dialogPrefetchDone = true;
             console.log('[AIMessageGenerator] ✅ AI(dialogs) prefetched for whole game');
             return { success: true, message: 'OK' };
@@ -297,10 +343,11 @@ Yêu cầu bắt buộc:
     }
 
     /**
-     * Tạo prompt cho từng loại dialog (intro, stage1-4, ending) từ config DIALOG_PROMPTS
+     * Tạo prompt cho từng loại dialog (intro, stage1-4, ending).
+     * (Giữ API cũ nhưng hiện tại dùng DIALOG_PROMPT batch thay vì per-type).
      */
     buildDialogPrompt(dialogType) {
-        return DIALOG_PROMPTS[dialogType] || DIALOG_PROMPTS.intro;
+        return DIALOG_PROMPT;
     }
     
     /**
@@ -336,6 +383,52 @@ Yêu cầu bắt buộc:
         } catch (_) {
             return null;
         }
+    }
+
+    /**
+     * Parse dialog batch theo DIALOG_PROMPT:
+     * - 5 SECTION, mỗi SECTION là 3–5 dòng, ngăn bởi "===SECTION===".
+     * - Thứ tự: intro, stage1, stage2, stage3, ending.
+     */
+    parseDialogSections(rawContent) {
+        if (!rawContent || typeof rawContent !== 'string') return null;
+
+        // Bỏ ``` hoặc ```json nếu có
+        let text = rawContent.trim().replace(/^```[a-zA-Z]*\s*|\s*```$/g, '').trim();
+
+        const parts = text
+            .split('===SECTION===')
+            .map((p) => p.trim())
+            .filter(Boolean);
+
+        if (parts.length < 5) return null;
+
+        const [introRaw, stage1Raw, stage2Raw, stage3Raw, endingRaw] = parts;
+
+        const toLines = (block) =>
+            block
+                .split('\n')
+                .map((s) => s.trim())
+                .filter(Boolean);
+
+        const dialogsByType = {
+            intro: toLines(introRaw),
+            stage1: toLines(stage1Raw),
+            stage2: toLines(stage2Raw),
+            stage3: toLines(stage3Raw),
+            ending: toLines(endingRaw),
+        };
+
+        const hasAny = Object.values(dialogsByType).some((a) => Array.isArray(a) && a.length > 0);
+        if (!hasAny) return null;
+
+        // NPC name: giữ giống default (Sun) để UI ổn định
+        const npcName = DEFAULT_DIALOGS?.intro?.npcName || 'Sun';
+
+        return {
+            npcName,
+            dialogsByType,
+        };
     }
 }
 

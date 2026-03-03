@@ -11,7 +11,6 @@ import { EventTracker } from './systems/EventTracker.js';
 import { AIRuleEngine } from './systems/AIRuleEngine.js';
 import { AIMessageGenerator } from './systems/AIMessageGenerator.js';
 import { APIKeyManager } from './systems/APIKeyManager.js';
-import { AICallLogic } from './systems/AICallLogic.js';
 import { UIManager } from './ui/UIManager.js';
 import { NPCDialogSystem } from './systems/NPCDialogSystem.js';
 import { SoundManager } from './systems/SoundManager.js';
@@ -49,7 +48,6 @@ window.addEventListener('resize', () => {
 });
 
 // ===== Initialize Systems =====
-const apiKeyManager = new APIKeyManager();
 const eventTracker = new EventTracker();
 const aiMessageGenerator = new AIMessageGenerator();
 const aiRuleEngine = new AIRuleEngine(aiMessageGenerator, eventTracker);
@@ -163,14 +161,17 @@ const gameAI = {
         if (!this.hasValidCredentials()) {
             return { success: false, message: 'Chưa cấu hình API' };
         }
-        return await AICallLogic.generateStory(this.apiKey, this.endpoint, this.model);
+        // Hiện tại không còn dùng story riêng lẻ nữa (nội dung chính đã trong DIALOG_PROMPT),
+        // nên hàm này được giữ lại chỉ để tránh lỗi nếu có code legacy gọi tới.
+        return { success: false, message: 'generateStory() hiện không còn được hỗ trợ.' };
     },
 
     async generateRage(stage, fallCount = 0) {
         if (!this.hasValidCredentials()) {
             return { success: false, message: 'Chưa cấu hình API' };
         }
-        return await AICallLogic.generateRage(this.apiKey, this.endpoint, stage, fallCount, this.model);
+        // Taunt đã chuyển sang TAUNT_BATCH_PROMPT trong AIMessageGenerator.
+        return { success: false, message: 'generateRage() hiện không còn được hỗ trợ.' };
     },
 
     async testAPI() {

@@ -1,8 +1,7 @@
 /**
- * AICallLogic - Các hàm để gọi AI API: generateStory, generateRage
- * Xử lý error: Invalid Key, Quota Exceeded, Timeout
- * ❌ Không lưu key
- * ❌ Không đụng UI
+ * AICallLogic - Helper kiểm tra API (testAPI) + xử lý lỗi HTTP/timeout.
+ * Toàn bộ prompt game chính (taunt, dialog) đã chuyển sang dùng trực tiếp trong AIMessageGenerator + NPCDialogConfig.
+ * File này giờ chỉ còn nhiệm vụ: test API key / endpoint trước khi áp dụng vào game.
  */
 import { callLLMText, detectProvider } from './LLMClient.js';
 export class AICallLogic {
@@ -12,129 +11,7 @@ export class AICallLogic {
     static API_TIMEOUT = 15000; // 15 giây
 
     /**
-     * Generate a story using AI API - output JSON với 4 phần cho 4 stage (mỗi phần 100-150 chữ, tổng 400-600 chữ).
-     * @param {string} apiKey - OpenAI API key (sk-...)
-     * @param {string} endpoint - API endpoint
-     * @param {string} model - AI model name (default: gpt-3.5-turbo)
-     * @returns {Promise<{success: boolean, message: string, storyParts?: string[], story?: string, error?: string}>}
-     */
-    static async generateStory(apiKey, endpoint, model = 'gpt-3.5-turbo') {
-        const validation = this.validateInput(apiKey, endpoint);
-        if (!validation.valid) {
-            return { success: false, message: validation.error };
-        }
-
-        const prompt = `Bạn là nhà sáng tạo câu chuyện. Tạo một câu chuyện khích lệ cho game platformer, chia làm 4 phần tương ứng 4 stage (hiển thị lần lượt trong game).
-Yêu cầu:
-- Trả về ĐÚNG một JSON object với 4 key: "stage1", "stage2", "stage3", "stage4".
-- Mỗi phần (stage1 đến stage4) từ 100 đến 150 chữ, viết bằng tiếng Việt.
-- Tổng toàn bộ 4 phần từ 400 đến 600 chữ.
-- Nội dung tích cực, gợi cảm hứng, khích lệ người chơi.
-- Không thêm markdown, không giải thích, chỉ trả về JSON thuần. Ví dụ format:
-{"stage1":"...","stage2":"...","stage3":"...","stage4":"..."}`;
-
-        try {
-            const result = await this.callOpenAIAPI(apiKey, endpoint, model, prompt, 700);
-            if (!result.success) {
-                return result;
-            }
-            const parsed = this.parseStoryJSON(result.content);
-            if (parsed) {
-                return {
-                    success: true,
-                    message: 'Thành công',
-                    storyParts: parsed,
-                    story: parsed.join('|||') // Dấu ngăn cách để code tách ra dễ dàng
-                };
-            }
-            return {
-                success: false,
-                message: 'AI trả về không đúng format JSON (stage1, stage2, stage3, stage4)',
-                error: 'INVALID_JSON'
-            };
-        } catch (error) {
-            return this.handleError(error);
-        }
-    }
-
-    /**
-     * Parse JSON story response thành mảng [stage1, stage2, stage3, stage4]
-     * @private
-     */
-    static parseStoryJSON(content) {
-        if (!content || typeof content !== 'string') return null;
-        const trimmed = content.trim().replace(/^```json\s*|\s*```$/g, '').trim();
-        try {
-            const obj = JSON.parse(trimmed);
-            if (obj && typeof obj.stage1 === 'string' && typeof obj.stage2 === 'string' && typeof obj.stage3 === 'string' && typeof obj.stage4 === 'string') {
-                return [obj.stage1.trim(), obj.stage2.trim(), obj.stage3.trim(), obj.stage4.trim()];
-            }
-        } catch (_) {}
-        return null;
-    }
-
-    /**
-     * Generate danh sách câu rage (10-20 câu) dựa trên stage và số lần rơi.
-     * @param {string} apiKey - OpenAI API key
-     * @param {string} endpoint - API endpoint
-     * @param {number} stage - Game stage number
-     * @param {number} fallCount - Số lần người chơi đã rơi
-     * @param {string} model - AI model name
-     * @returns {Promise<{success: boolean, message: string, rages?: string[], error?: string}>}
-     */
-    static async generateRage(apiKey, endpoint, stage, fallCount = 0, model = 'gpt-3.5-turbo') {
-        const validation = this.validateInput(apiKey, endpoint);
-        if (!validation.valid) {
-            return { success: false, message: validation.error };
-        }
-
-        const stageDesc = stage >= 1 && stage <= 10 ? `Stage ${stage}` : `Stage ${stage} (khó)`;
-        const prompt = `Bạn là NPC mỉa mai trong game platformer. Hiện tại: ${stageDesc}, người chơi đã rơi ${fallCount} lần.
-Trả về ĐÚNG một JSON array gồm 10 đến 20 câu trêu chọc/mỉa mai (độ dài mỗi câu khác nhau: có câu ngắn 5-8 từ, có câu dài 12-20 từ). Mỗi phần tử là một câu tiếng Việt. Châm biếm, cay cú về stage hoặc kỹ năng người chơi.
-Chỉ trả về JSON array thuần, không markdown không giải thích. Ví dụ: ["Câu 1.","Câu 2 ngắn.","Câu 3 dài hơn một chút."]`;
-
-        try {
-            const result = await this.callOpenAIAPI(apiKey, endpoint, model, prompt, 600);
-            if (!result.success) {
-                return result;
-            }
-            const rages = this.parseRageJSON(result.content);
-            if (rages && rages.length > 0) {
-                return {
-                    success: true,
-                    message: 'Thành công',
-                    rages
-                };
-            }
-            return {
-                success: false,
-                message: 'AI trả về không đúng format JSON array',
-                error: 'INVALID_JSON'
-            };
-        } catch (error) {
-            return this.handleError(error);
-        }
-    }
-
-    /**
-     * Parse JSON array rage response
-     * @private
-     */
-    static parseRageJSON(content) {
-        if (!content || typeof content !== 'string') return null;
-        const trimmed = content.trim().replace(/^```json\s*|\s*```$/g, '').trim();
-        try {
-            const arr = JSON.parse(trimmed);
-            if (Array.isArray(arr)) {
-                const list = arr.filter((item) => typeof item === 'string' && item.trim().length > 0).map((s) => s.trim());
-                return list.length > 0 ? list : null;
-            }
-        } catch (_) {}
-        return null;
-    }
-
-    /**
-     * Call OpenAI API with error handling
+     * Call OpenAI-compatible / Gemini API với error handling chuẩn hóa cho test API.
      * @private
      */
     static async callOpenAIAPI(apiKey, endpoint, model, prompt, maxTokens) {
@@ -152,7 +29,7 @@ Chỉ trả về JSON array thuần, không markdown không giải thích. Ví d
             return { success: true, content: result.content };
         }
 
-        // Keep old error semantics for OpenAI(-compatible) where possible
+        // Giữ semantics cũ cho endpoint kiểu OpenAI: map HTTP code → message thân thiện
         const provider = result.provider || detectProvider(endpoint);
         if (provider === 'openai') {
             const match = String(result.message || '').match(/^HTTP\s+(\d{3})$/);
