@@ -332,6 +332,7 @@ export class Player {
                 this.vx = 0;
                 
                 if (this.eventTracker){
+                    // Ghi nhận fall cho AI (zone hardLanding), sound sẽ nghe event 'fall'
                     this.eventTracker.track('fall', {zone: 'hardLanding'}); 
                 }
             }

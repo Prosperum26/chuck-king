@@ -386,7 +386,8 @@ eventTracker.on('jump', () => {
     soundManager.playJump();
 });
 
-eventTracker.on('land', () => {
+// Fall (bao gồm deep fall) → SoundManager đã map tới DEEP_fall.mp3
+eventTracker.on('fall', () => {
     soundManager.playFall();
 });
 
