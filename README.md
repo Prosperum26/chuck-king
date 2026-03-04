@@ -258,9 +258,9 @@ Free to use for educational and personal purposes.
 **Nguyễn Thị Ngọc Quỳnh**  
 **Huỳnh Nhật Huyền**  
 **Nguyễn Thanh Bình**  
-**Mai Thanh Tiến**  
+**Mai Danh Tiến**  
 **Bùi Tần Uy Minh**  
-**Nguyễn Văn Thiện**  
+**Võ Văn Thiện**  
 **Ngô Hồng Ân**  
 **Trần Hữu Thắng**
 
