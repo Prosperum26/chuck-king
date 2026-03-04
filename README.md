@@ -248,6 +248,27 @@ Free to use for educational and personal purposes.
 
 ---
 
+## 🌌 Meet The Team
+
+<div align="center">
+
+### 👑 Chuck King Dev Squad 👑
+
+**Quảng Phú Hưng**  
+**Nguyễn Thị Ngọc Quỳnh**  
+**Huỳnh Nhật Huyền**  
+**Nguyễn Thanh Bình**  
+**Mai Thanh Tiến**  
+**Bùi Tần Uy Minh**  
+**Nguyễn Văn Thiện**  
+**Ngô Hồng Ân**  
+**Trần Hữu Thắng**
+
+⚡ United by challenge. Driven by chaos. ⚡
+
+</div>
+
+---
 <p align="center">
   Made with rage and JavaScript 🔥
 </p>
