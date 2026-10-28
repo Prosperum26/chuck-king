@@ -21,27 +21,25 @@
 
 ## 🎮 About The Game
 
-**Chuck King** là một web-based 2D vertical rage platformer, lấy cảm hứng từ *Jump King*.
+**Chuck King** is a **web-based 2D vertical rage platformer** inspired by *Jump King*.
 
-Người chơi điều khiển nhân vật bằng cơ chế **charge jump**:
-- Giữ phím để tích lực
-- Thả để nhảy
-- Rơi là... mất hết thành quả 😈
+Players control the character using a **charge jump mechanic**:
 
-Điểm đặc biệt của game:
+- Hold the key to **charge the jump**
+- Release to **jump**
+- If you fall... you **lose all your progress** 😈
 
-> 🤖 **AI Rage System** – hệ thống AI sẽ trêu chọc người chơi khi:
-- Rơi quá nhiều lần
-- Idle quá lâu
-- Bị kẹt tại một khu vực
+### Key Feature
 
-Game được xây dựng hoàn toàn bằng **Canvas 2D thuần JavaScript**, không sử dụng framework.
+> 🤖 **AI Rage System** – an AI system that teases the player when:
+- They fall too many times
+- They stay idle for too long
+- They get stuck in the same area
 
+The game is built entirely using **pure JavaScript with the Canvas 2D API**, without using any frameworks.
 ---
 
 ## 🚀 Live Demo
-
-> (Thêm link nếu bạn deploy lên GitHub Pages)
 
 ```
 https://prosperum26.github.io/chuck-king/
@@ -250,6 +248,27 @@ Free to use for educational and personal purposes.
 
 ---
 
+## 🌌 Meet The Team
+
+<div align="center">
+
+### 👑 Chuck King Dev Squad 👑
+
+**Quảng Phú Hưng**  
+**Nguyễn Thị Ngọc Quỳnh**  
+**Huỳnh Nhật Huyền**  
+**Nguyễn Thanh Bình**  
+**Mai Danh Tiến**  
+**Bùi Tần Uy Minh**  
+**Võ Văn Thiện**  
+**Ngô Hồng Ân**  
+**Trần Hữu Thắng**
+
+⚡ United by challenge. Driven by chaos. ⚡
+
+</div>
+
+---
 <p align="center">
   Made with rage and JavaScript 🔥
 </p>
